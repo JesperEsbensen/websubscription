@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Django Auth Example</title>
+</head>
+<body>
+    <nav>
+        {% if user.is_authenticated %}
+            <span>Logged in as {{ user.username }}</span> |
+            <a href="/profile/">Profile</a>
+            <form action="/accounts/logout/" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" style="background:none;border:none;padding:0;color:#069;text-decoration:underline;cursor:pointer;">Logout</button>
+            </form>
+        {% else %}
+            <a href="/register/">Register</a>
+            <a href="/accounts/login/">Login</a>
+        {% endif %}
+    </nav>
+    <hr>
+    {% block content %}{% endblock %}
+</body>
+</html> 
