@@ -25,7 +25,7 @@ def register(request):
             user = form.save(commit=False)
             user.is_active = True  # User can log in, but we will check email_confirmed
             user.save()
-            profile = Profile.objects.create(user=user)
+            # profile = Profile.objects.create(user=user)
             # Send confirmation email
             current_site = get_current_site(request)
             subject = 'Confirm your email'

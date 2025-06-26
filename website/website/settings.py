@@ -129,7 +129,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST = "smtp.simply.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "jesper.esbensen@eeng.dk"
@@ -156,3 +156,6 @@ LOGGING = {
         },
     },
 }
+
+# When logging out, the user is redirected to the login page.
+LOGOUT_REDIRECT_URL = '/'
