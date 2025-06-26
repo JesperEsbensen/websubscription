@@ -1,5 +1,157 @@
 {% extends 'registration/base.html' %}
+{% block title %}Home - WebSubscription{% endblock %}
+
 {% block content %}
-  <h2>Welcome to the Website!</h2>
-  <p>This is the homepage.</p>
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">
+                    Welcome to WebSubscription
+                </h1>
+                <p class="lead mb-4">
+                    Your secure platform for managing web subscriptions with ease and confidence.
+                </p>
+                <div class="d-flex gap-3">
+                    {% if not user.is_authenticated %}
+                        <a href="{% url 'register' %}" class="btn btn-light btn-lg">
+                            <i class="bi bi-person-plus"></i> Get Started
+                        </a>
+                        <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </a>
+                    {% else %}
+                        <a href="{% url 'profile' %}" class="btn btn-light btn-lg">
+                            <i class="bi bi-person"></i> View Profile
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="bi bi-shield-check" style="font-size: 8rem; opacity: 0.8;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row">
+        <!-- Left Side - Site Functionality -->
+        <div class="col-lg-8">
+            <h2 class="mb-4">How It Works</h2>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-shield-lock text-primary" style="font-size: 3rem;"></i>
+                            <h5 class="card-title mt-3">Secure Authentication</h5>
+                            <p class="card-text">
+                                Multi-factor authentication and email verification ensure your account stays secure.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-gear text-primary" style="font-size: 3rem;"></i>
+                            <h5 class="card-title mt-3">Easy Management</h5>
+                            <p class="card-text">
+                                Manage all your web subscriptions from one centralized dashboard.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-graph-up text-primary" style="font-size: 3rem;"></i>
+                            <h5 class="card-title mt-3">Analytics & Insights</h5>
+                            <p class="card-text">
+                                Track your subscription usage and get detailed analytics and insights.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-bell text-primary" style="font-size: 3rem;"></i>
+                            <h5 class="card-title mt-3">Smart Notifications</h5>
+                            <p class="card-text">
+                                Get notified about renewals, payments, and important account updates.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-5">
+                <h3>Why Choose WebSubscription?</h3>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Bank-level security encryption</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>24/7 customer support</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Mobile-friendly interface</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Real-time synchronization</li>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Comprehensive reporting</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Right Side - Login/Register Frame -->
+        <div class="col-lg-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">
+                        {% if user.is_authenticated %}
+                            <i class="bi bi-person-circle"></i> Welcome Back!
+                        {% else %}
+                            <i class="bi bi-box-arrow-in-right"></i> Quick Access
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    {% if user.is_authenticated %}
+                        <div class="text-center mb-3">
+                            <i class="bi bi-person-circle text-primary" style="font-size: 4rem;"></i>
+                            <h5 class="mt-2">{{ user.username }}</h5>
+                            <p class="text-muted">You're successfully logged in</p>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'profile' %}" class="btn btn-primary">
+                                <i class="bi bi-person"></i> View Profile
+                            </a>
+                            <form action="{% url 'logout' %}" method="post" class="d-grid">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-secondary">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="text-center mb-4">
+                            <i class="bi bi-shield-check text-primary" style="font-size: 3rem;"></i>
+                            <h5 class="mt-2">Get Started Today</h5>
+                            <p class="text-muted">Join thousands of users managing their subscriptions</p>
+                        </div>
+                        <div class="d-grid gap-3">
+                            <a href="{% url 'register' %}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-person-plus"></i> Create Account
+                            </a>
+                            <a href="{% url 'login' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-box-arrow-in-right"></i> Sign In
+                            </a>
+                        </div>
+                        <hr class="my-4">
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check"></i> Secure & Reliable
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %} 
