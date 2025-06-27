@@ -48,7 +48,7 @@ class AuthTests(TestCase):
         response = self.client.get(confirm_url)
         user.refresh_from_db()
         self.assertTrue(user.profile.email_confirmed)
-        self.assertContains(response, 'Email confirmed')
+        self.assertContains(response, 'successfully confirmed')
 
     def test_login_requires_email_confirmation(self):
         # Create a user with unconfirmed email for this specific test
@@ -169,12 +169,12 @@ class SubscriptionCancellationTests(TestCase):
 
     @patch('accounts.views.stripe')
     def test_subscription_details_view(self, mock_stripe):
-        # Mock Stripe responses with proper nested objects
+        # Mock Stripe responses with proper nested objects and real values
         class Recurring:
             interval = 'month'
         class Price:
             recurring = Recurring()
-            unit_amount = 2000
+            unit_amount = 2000  # Real numeric value
         class Item:
             price = Price()
         mock_item = Item()
@@ -185,17 +185,24 @@ class SubscriptionCancellationTests(TestCase):
         mock_subscription.current_period_end = 1643673600
         mock_subscription.cancel_at_period_end = False
         mock_subscription.items.data = [mock_item]
+        mock_subscription.id = 'sub_test123'
         
         mock_customer = MagicMock()
         mock_customer.name = 'Test User'
         mock_customer.email = 'test@example.com'
         mock_customer.id = 'cus_test123'
         
+        # Mock Stripe API calls
         mock_stripe.Subscription.retrieve.return_value = mock_subscription
         mock_stripe.Customer.retrieve.return_value = mock_customer
         
         # Mock the upcoming invoice to return None to avoid template issues
         mock_stripe.Invoice.upcoming.side_effect = Exception("No upcoming invoice")
+        
+        # Mock stripe.error.StripeError for exception handling
+        class MockStripeError(Exception):
+            pass
+        mock_stripe.error.StripeError = MockStripeError
         
         response = self.client.get(reverse('subscription_details'))
         

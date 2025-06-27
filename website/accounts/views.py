@@ -205,35 +205,6 @@ def stripe_webhook(request):
     return HttpResponse(status=200)
 
 @login_required
-def delete_stripe_customer(request):
-    """Delete customer from Stripe and clear local subscription data"""
-    if not request.user.profile.stripe_customer_id:
-        messages.error(request, 'No Stripe customer found for this account.')
-        return redirect('profile')
-    
-    try:
-        # Delete the customer from Stripe
-        customer = stripe.Customer.delete(request.user.profile.stripe_customer_id)
-        logger.info(f'Deleted Stripe customer {request.user.profile.stripe_customer_id} for user {request.user.username}')
-        
-        # Clear subscription data from local profile
-        request.user.profile.stripe_customer_id = None
-        request.user.profile.stripe_subscription_id = None
-        request.user.profile.subscription_status = None
-        request.user.profile.save()
-        
-        messages.success(request, 'Your Stripe customer account has been deleted successfully.')
-        
-    except stripe.error.StripeError as e:
-        logger.error(f'Error deleting Stripe customer: {e}')
-        messages.error(request, f'Error deleting customer: {str(e)}')
-    except Exception as e:
-        logger.error(f'Unexpected error deleting Stripe customer: {e}')
-        messages.error(request, 'An unexpected error occurred while deleting your customer account.')
-    
-    return redirect('profile')
-
-@login_required
 def logged_in_page(request):
     return render(request, 'accounts/logged_in_page.html')
 

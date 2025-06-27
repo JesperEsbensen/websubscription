@@ -29,5 +29,4 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('logged-in/', accounts_views.logged_in_page, name='logged_in_page'),
     path('subscribing/', accounts_views.subscribing_page, name='subscribing_page'),
-    path('delete-stripe-customer/', accounts_views.delete_stripe_customer, name='delete_stripe_customer'),
 ]
