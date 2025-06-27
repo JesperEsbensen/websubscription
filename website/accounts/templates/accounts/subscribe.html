@@ -1,0 +1,20 @@
+{% extends "registration/base.html" %}
+{% block content %}
+<h2>Choose a Membership</h2>
+<div class="row">
+  {% for membership in memberships %}
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">{{ membership.name }}</h5>
+          <p class="card-text">{{ membership.description }}</p>
+          <form action="{% url 'create_checkout_session' membership.id %}" method="POST">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Subscribe</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %} 

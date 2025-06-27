@@ -21,6 +21,18 @@ This project is a basic website based on django 5.2 that offers:
 python3.12 -m venv .venv
 pip install django==5.2.3
 
+## Bootstrap Setup
+
+This project uses [Bootstrap 5.3.0](https://getbootstrap.com/) and [Bootstrap Icons 1.10.0](https://icons.getbootstrap.com/) for styling and UI components. Both are included via CDN links in the main base template (`website/accounts/templates/registration/base.html`).
+
+- **Bootstrap CSS** and **Bootstrap JS** are loaded from the official CDN:
+  - CSS: `https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css`
+  - JS: `https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js`
+- **Bootstrap Icons** are loaded from:
+  - `https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css`
+
+No local installation or npm package is required for Bootstrap or its icons. You can customize the styles further by editing the `<style>` section in the base template.
+
 ## Start Django Project
 
 

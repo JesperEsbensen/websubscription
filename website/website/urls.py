@@ -26,4 +26,8 @@ urlpatterns = [
     path('confirm-email/<uidb64>/<token>/', accounts_views.confirm_email, name='confirm_email'),
     path('accounts/login/', accounts_views.custom_login, name='login'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('accounts/', include('accounts.urls')),
+    path('logged-in/', accounts_views.logged_in_page, name='logged_in_page'),
+    path('subscribing/', accounts_views.subscribing_page, name='subscribing_page'),
+    path('delete-stripe-customer/', accounts_views.delete_stripe_customer, name='delete_stripe_customer'),
 ]

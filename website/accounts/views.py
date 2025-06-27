@@ -9,13 +9,39 @@ from django.template.loader import render_to_string
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
-from .models import Profile
+from .models import Profile, Membership
 from django.http import HttpResponse
 from django.contrib import messages
 import logging
 from .forms import CustomUserCreationForm
+from django.conf import settings
+import stripe
+from django.views.decorators.csrf import csrf_exempt
+from functools import wraps
 
 logger = logging.getLogger(__name__)
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+# Custom decorator for subscription-required pages
+def subscription_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        # Check if user has an active subscription
+        if hasattr(request.user, 'profile'):
+            if request.user.profile.subscription_status == 'active':
+                return view_func(request, *args, **kwargs)
+            else:
+                messages.error(request, 'This page requires an active subscription.')
+                return redirect('subscribe')
+        else:
+            messages.error(request, 'Profile not found. Please contact support.')
+            return redirect('home')
+    
+    return _wrapped_view
 
 # Templates needed: accounts/register.html, accounts/profile.html, accounts/home.html, accounts/login.html, accounts/registration_pending.html
 def register(request):
@@ -87,6 +113,259 @@ def confirm_email(request, uidb64, token):
     if user is not None and default_token_generator.check_token(user, token):
         user.profile.email_confirmed = True
         user.profile.save()
-        return HttpResponse('Email confirmed! You can now log in.')
+        return render(request, 'accounts/email_confirmed.html')
     else:
         return HttpResponse('Invalid confirmation link.')
+
+def subscribe(request):
+    memberships = Membership.objects.all()
+    return render(request, "accounts/subscribe.html", {"memberships": memberships, "stripe_pk": settings.STRIPE_PUBLISHABLE_KEY})
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+
+def create_checkout_session(request, membership_id):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    membership = Membership.objects.get(id=membership_id)
+    
+    # Get or create Stripe customer
+    if not request.user.profile.stripe_customer_id:
+        customer = stripe.Customer.create(
+            email=request.user.email,
+            name=request.user.username,
+        )
+        request.user.profile.stripe_customer_id = customer.id
+        request.user.profile.save()
+    
+    session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        mode='subscription',
+        customer=request.user.profile.stripe_customer_id,
+        line_items=[{
+            'price': membership.stripe_price_id,
+            'quantity': 1,
+        }],
+        success_url=request.build_absolute_uri('/accounts/success/'),
+        cancel_url=request.build_absolute_uri('/accounts/cancel/'),
+    )
+    return redirect(session.url)
+
+def subscription_success(request):
+    return render(request, 'accounts/subscription_success.html')
+
+def subscription_cancel(request):
+    return render(request, 'accounts/subscription_cancel.html')
+
+@csrf_exempt
+def stripe_webhook(request):
+    import stripe
+    import logging
+    logger = logging.getLogger(__name__)
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+    event = None
+
+    logger.info('Stripe webhook received!')
+    logger.debug(f'Payload length: {len(payload)}')
+    logger.debug(f'Signature header: {sig_header}')
+
+    if not endpoint_secret:
+        logger.error('STRIPE_WEBHOOK_SECRET not configured in settings')
+        return HttpResponse(status=500)
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+        logger.info(f'Stripe event type: {event["type"]}')
+    except ValueError as e:
+        logger.error(f'Invalid payload: {e}')
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f'Invalid signature: {e}')
+        return HttpResponse(status=400)
+
+    if event['type'] in ['customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted']:
+        subscription = event['data']['object']
+        stripe_subscription_id = subscription['id']
+        stripe_customer_id = subscription['customer']
+        status = subscription['status']
+        from .models import Profile
+        try:
+            profile = Profile.objects.get(stripe_customer_id=stripe_customer_id)
+            profile.stripe_subscription_id = stripe_subscription_id
+            profile.subscription_status = status
+            profile.save()
+            logger.info(f'Updated profile for customer {stripe_customer_id} with subscription {stripe_subscription_id} and status {status}')
+        except Profile.DoesNotExist:
+            logger.warning(f'Profile with customer_id {stripe_customer_id} does not exist')
+    return HttpResponse(status=200)
+
+@login_required
+def delete_stripe_customer(request):
+    """Delete customer from Stripe and clear local subscription data"""
+    if not request.user.profile.stripe_customer_id:
+        messages.error(request, 'No Stripe customer found for this account.')
+        return redirect('profile')
+    
+    try:
+        # Delete the customer from Stripe
+        customer = stripe.Customer.delete(request.user.profile.stripe_customer_id)
+        logger.info(f'Deleted Stripe customer {request.user.profile.stripe_customer_id} for user {request.user.username}')
+        
+        # Clear subscription data from local profile
+        request.user.profile.stripe_customer_id = None
+        request.user.profile.stripe_subscription_id = None
+        request.user.profile.subscription_status = None
+        request.user.profile.save()
+        
+        messages.success(request, 'Your Stripe customer account has been deleted successfully.')
+        
+    except stripe.error.StripeError as e:
+        logger.error(f'Error deleting Stripe customer: {e}')
+        messages.error(request, f'Error deleting customer: {str(e)}')
+    except Exception as e:
+        logger.error(f'Unexpected error deleting Stripe customer: {e}')
+        messages.error(request, 'An unexpected error occurred while deleting your customer account.')
+    
+    return redirect('profile')
+
+@login_required
+def logged_in_page(request):
+    return render(request, 'accounts/logged_in_page.html')
+
+@subscription_required
+def subscribing_page(request):
+    return render(request, 'accounts/subscribing_page.html')
+
+@login_required
+def cancel_subscription(request):
+    """Cancel the user's subscription in Stripe and update local status"""
+    if not request.user.profile.stripe_subscription_id:
+        messages.error(request, 'No active subscription found to cancel.')
+        return redirect('profile')
+    
+    try:
+        # Cancel the subscription in Stripe
+        subscription = stripe.Subscription.modify(
+            request.user.profile.stripe_subscription_id,
+            cancel_at_period_end=True
+        )
+        
+        logger.info(f'Cancelled subscription {request.user.profile.stripe_subscription_id} for user {request.user.username}')
+        
+        # Update local subscription status
+        request.user.profile.subscription_status = 'canceled'
+        request.user.profile.save()
+        
+        messages.success(request, 'Your subscription has been cancelled successfully. You will continue to have access until the end of your current billing period.')
+        
+    except stripe.error.StripeError as e:
+        logger.error(f'Error cancelling subscription: {e}')
+        messages.error(request, f'Error cancelling subscription: {str(e)}')
+    except Exception as e:
+        logger.error(f'Unexpected error cancelling subscription: {e}')
+        messages.error(request, 'An unexpected error occurred while cancelling your subscription.')
+    
+    return redirect('profile')
+
+@login_required
+def reactivate_subscription(request):
+    """Reactivate a cancelled subscription"""
+    if not request.user.profile.stripe_subscription_id:
+        messages.error(request, 'No subscription found to reactivate.')
+        return redirect('profile')
+    
+    try:
+        # Reactivate the subscription in Stripe
+        subscription = stripe.Subscription.modify(
+            request.user.profile.stripe_subscription_id,
+            cancel_at_period_end=False
+        )
+        
+        logger.info(f'Reactivated subscription {request.user.profile.stripe_subscription_id} for user {request.user.username}')
+        
+        # Update local subscription status
+        request.user.profile.subscription_status = 'active'
+        request.user.profile.save()
+        
+        messages.success(request, 'Your subscription has been reactivated successfully.')
+        
+    except stripe.error.StripeError as e:
+        logger.error(f'Error reactivating subscription: {e}')
+        messages.error(request, f'Error reactivating subscription: {str(e)}')
+    except Exception as e:
+        logger.error(f'Unexpected error reactivating subscription: {e}')
+        messages.error(request, 'An unexpected error occurred while reactivating your subscription.')
+    
+    return redirect('profile')
+
+@login_required
+def subscription_details(request):
+    """Display detailed subscription information"""
+    if not request.user.profile.stripe_subscription_id:
+        messages.error(request, 'No subscription found.')
+        return redirect('profile')
+    
+    try:
+        # Get subscription details from Stripe
+        subscription = stripe.Subscription.retrieve(request.user.profile.stripe_subscription_id)
+        
+        # Get customer details
+        customer = stripe.Customer.retrieve(request.user.profile.stripe_customer_id)
+        
+        # Get upcoming invoice if subscription is active
+        upcoming_invoice = None
+        if subscription.status == 'active':
+            try:
+                upcoming_invoice = stripe.Invoice.upcoming(customer=request.user.profile.stripe_customer_id)
+            except Exception:
+                pass
+        
+        context = {
+            'subscription': subscription,
+            'customer': customer,
+            'upcoming_invoice': upcoming_invoice,
+        }
+        
+        return render(request, 'accounts/subscription_details.html', context)
+        
+    except stripe.error.StripeError as e:
+        logger.error(f'Error retrieving subscription details: {e}')
+        messages.error(request, f'Error retrieving subscription details: {str(e)}')
+        return redirect('profile')
+    except Exception as e:
+        logger.error(f'Unexpected error retrieving subscription details: {e}')
+        messages.error(request, 'An unexpected error occurred while retrieving subscription details.')
+        return redirect('profile')
+
+@login_required
+def cancel_subscription_immediately(request):
+    """Cancel the user's subscription immediately in Stripe"""
+    if not request.user.profile.stripe_subscription_id:
+        messages.error(request, 'No active subscription found to cancel.')
+        return redirect('profile')
+    
+    try:
+        # Cancel the subscription immediately in Stripe
+        subscription = stripe.Subscription.delete(request.user.profile.stripe_subscription_id)
+        
+        logger.info(f'Immediately cancelled subscription {request.user.profile.stripe_subscription_id} for user {request.user.username}')
+        
+        # Update local subscription status
+        request.user.profile.subscription_status = 'canceled'
+        request.user.profile.save()
+        
+        messages.success(request, 'Your subscription has been cancelled immediately. You no longer have access to premium features.')
+        
+    except stripe.error.StripeError as e:
+        logger.error(f'Error cancelling subscription immediately: {e}')
+        messages.error(request, f'Error cancelling subscription: {str(e)}')
+    except Exception as e:
+        logger.error(f'Unexpected error cancelling subscription immediately: {e}')
+        messages.error(request, 'An unexpected error occurred while cancelling your subscription.')
+    
+    return redirect('profile')

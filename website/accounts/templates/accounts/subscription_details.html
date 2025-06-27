@@ -1,0 +1,186 @@
+{% extends 'registration/base.html' %}
+{% load stripe_filters %}
+{% block title %}Subscription Details - WebSubscription{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-credit-card"></i> Subscription Details
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Subscription Status -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5><i class="bi bi-info-circle"></i> Status</h5>
+                            <span class="badge {% if subscription.status == 'active' %}bg-success{% elif subscription.status == 'canceled' %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
+                                {{ subscription.status|title }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="bi bi-calendar"></i> Created</h5>
+                            <p class="mb-0">{{ subscription.created|stripe_timestamp_to_date }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Billing Information -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-credit-card"></i> Billing Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Billing Cycle:</strong>
+                                <p class="text-muted">
+                                    {% if subscription.items.data.0.price.recurring.interval == 'month' %}
+                                        Monthly
+                                    {% elif subscription.items.data.0.price.recurring.interval == 'year' %}
+                                        Annual
+                                    {% else %}
+                                        {{ subscription.items.data.0.price.recurring.interval|title }}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Amount:</strong>
+                                <p class="text-muted">
+                                    {{ subscription.items.data.0.price.unit_amount|stripe_amount_to_dollars }}
+                                    / {{ subscription.items.data.0.price.recurring.interval }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Period -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-calendar-range"></i> Current Period</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Start:</strong>
+                                <p class="text-muted">{{ subscription.current_period_start|stripe_timestamp_to_date }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>End:</strong>
+                                <p class="text-muted">{{ subscription.current_period_end|stripe_timestamp_to_date }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if subscription.cancel_at_period_end %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Subscription Cancelled:</strong> Your subscription will end on {{ subscription.current_period_end|stripe_timestamp_to_date }}.
+                        You can reactivate it anytime before this date.
+                    </div>
+                    {% endif %}
+
+                    <!-- Cancellation Options Info -->
+                    {% if subscription.status == 'active' and not subscription.cancel_at_period_end %}
+                    <div class="alert alert-info mb-4">
+                        <h6><i class="bi bi-info-circle"></i> Cancellation Options</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Cancel at Period End:</strong>
+                                <p class="small text-muted mb-0">Your subscription will continue until the end of your current billing period. You'll keep access to all features until then.</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Cancel Immediately:</strong>
+                                <p class="small text-muted mb-0">Your subscription will stop immediately. You'll lose access to premium features right away.</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Upcoming Invoice -->
+                    {% if upcoming_invoice %}
+                    <div class="mb-4">
+                        <h5><i class="bi bi-receipt"></i> Next Invoice</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Amount:</strong>
+                                        <p class="text-muted">{{ upcoming_invoice.amount_due|stripe_amount_to_dollars }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Due Date:</strong>
+                                        <p class="text-muted">{{ upcoming_invoice.next_payment_attempt|stripe_timestamp_to_date }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2">
+                        {% if subscription.status == 'active' and not subscription.cancel_at_period_end %}
+                        <form method="post" action="{% url 'cancel_subscription' %}" onsubmit="return confirm('Are you sure you want to cancel your subscription? You will continue to have access until the end of your current billing period.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-x-circle"></i> Cancel at Period End
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'cancel_subscription_immediately' %}" onsubmit="return confirm('WARNING: This will cancel your subscription immediately and you will lose access to premium features right away. Are you sure you want to proceed?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-stop-circle"></i> Cancel Immediately
+                            </button>
+                        </form>
+                        {% elif subscription.cancel_at_period_end %}
+                        <form method="post" action="{% url 'reactivate_subscription' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Reactivate Subscription
+                            </button>
+                        </form>
+                        {% endif %}
+                        <a href="{% url 'profile' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Customer Information -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person"></i> Customer Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Name:</strong>
+                        <p class="text-muted mb-0">{{ customer.name|default:"Not provided" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Email:</strong>
+                        <p class="text-muted mb-0">{{ customer.email }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Customer ID:</strong>
+                        <p class="text-muted small mb-0">{{ customer.id }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription ID -->
+            <div class="card shadow-lg">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-hash"></i> Subscription ID
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-0">{{ subscription.id }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
