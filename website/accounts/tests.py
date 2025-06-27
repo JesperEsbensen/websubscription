@@ -80,6 +80,79 @@ class AuthTests(TestCase):
         })
         self.assertRedirects(response, reverse('profile'))
 
+    def test_unauthenticated_users_cannot_access_protected_pages(self):
+        """Test that unauthenticated users are redirected when accessing protected pages"""
+        # Ensure we're logged out
+        self.client.logout()
+        
+        # Test logged_in_page (should redirect to login)
+        response = self.client.get(reverse('logged_in_page'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+        
+        # Test subscribing_page (should redirect to login)
+        response = self.client.get(reverse('subscribing_page'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+        
+        # Test profile page (should redirect to login)
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+        
+        # Test subscription_details page (should redirect to login)
+        response = self.client.get(reverse('subscription_details'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+        
+        # Test cancel_subscription (should redirect to login)
+        response = self.client.post(reverse('cancel_subscription'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+        
+        # Test reactivate_subscription (should redirect to login)
+        response = self.client.post(reverse('reactivate_subscription'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+        
+        # Test cancel_subscription_immediately (should redirect to login)
+        response = self.client.post(reverse('cancel_subscription_immediately'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('login', response.url)
+
+    def test_logged_in_user_can_access_logged_in_page_but_not_subscription_page(self):
+        """Test that a logged-in user can access the logged-in page but not the subscription page without an active subscription."""
+        # Ensure the user is logged in
+        self.client.login(username=self.username, password=self.password)
+
+        # The user should be able to access the logged-in page
+        response = self.client.get(reverse('logged_in_page'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Subscription')  # Or some text unique to the page
+
+        # The user should NOT be able to access the subscription page (should redirect to subscribe)
+        response = self.client.get(reverse('subscribing_page'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/accounts/subscribe/', response.url)
+
+    def test_subscribing_user_can_access_both_logged_in_and_subscription_pages(self):
+        """Test that a user with an active subscription can access both the logged-in page and the subscription page."""
+        # Set up the user as subscribed
+        self.user.profile.stripe_subscription_id = 'sub_test123'
+        self.user.profile.subscription_status = 'active'
+        self.user.profile.save()
+        self.client.login(username=self.username, password=self.password)
+
+        # The user should be able to access the logged-in page
+        response = self.client.get(reverse('logged_in_page'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Subscription')  # Or some text unique to the page
+
+        # The user should be able to access the subscription page
+        response = self.client.get(reverse('subscribing_page'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Subscription')  # Or some text unique to the page
+
 
 class SubscriptionCancellationTests(TestCase):
     def setUp(self):
