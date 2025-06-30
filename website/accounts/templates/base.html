@@ -54,13 +54,8 @@
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <span class="navbar-text me-3">
-                                <i class="bi bi-person-circle"></i> {{ user.username }}
-                            </span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profile' %}">
-                                <i class="bi bi-person"></i> Profile
+                            <a class="btn btn-outline-light btn-sm d-flex align-items-center" href="{% url 'profile' %}" style="margin-right: 8px;">
+                                <i class="bi bi-person me-1"></i> {{ user.username }}
                             </a>
                         </li>
                         <li class="nav-item">

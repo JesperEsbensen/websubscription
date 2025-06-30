@@ -1,20 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Choose a Membership</h2>
-<div class="row">
-  {% for membership in memberships %}
-    <div class="col-md-4">
-      <div class="card mb-4">
-        <div class="card-body">
-          <h5 class="card-title">{{ membership.name }}</h5>
-          <p class="card-text">{{ membership.description }}</p>
-          <form action="{% url 'create_checkout_session' membership.id %}" method="POST">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary">Subscribe</button>
-          </form>
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0">
+            <i class="bi bi-star"></i> Membership
+          </h3>
+        </div>
+        <div class="card-body p-4">
+          <div class="row">
+            {% for membership in memberships %}
+              <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                  <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ membership.name }}</h5>
+                    <p class="card-text flex-grow-1">{{ membership.description }}</p>
+                    <form action="{% url 'create_checkout_session' membership.id %}" method="POST">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary w-100">Subscribe</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </div>
-  {% endfor %}
+  </div>
 </div>
 {% endblock %} 
