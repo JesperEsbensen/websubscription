@@ -11,4 +11,5 @@ urlpatterns = [
     path('cancel-subscription-immediately/', views.cancel_subscription_immediately, name='cancel_subscription_immediately'),
     path('reactivate-subscription/', views.reactivate_subscription, name='reactivate_subscription'),
     path('subscription-details/', views.subscription_details, name='subscription_details'),
+    path('delete-user/', views.delete_user, name='delete_user'),
 ] 

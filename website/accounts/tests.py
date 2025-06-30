@@ -5,6 +5,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from unittest.mock import patch, MagicMock
+from .models import Profile, Membership
 
 # Create your tests here.
 
@@ -287,3 +288,127 @@ class SubscriptionCancellationTests(TestCase):
         
         # Check that Stripe was called
         mock_stripe.Subscription.retrieve.assert_called_once_with('sub_test123')
+
+class UserDeletionTests(TestCase):
+    def setUp(self):
+        self.username = 'testuser'
+        self.email = 'test@example.com'
+        self.password = 'testpass123'
+        self.user = User.objects.create_user(username=self.username, email=self.email, password=self.password)
+        self.user.profile.email_confirmed = True
+        self.user.profile.stripe_customer_id = 'cus_test123'
+        self.user.profile.stripe_subscription_id = 'sub_test123'
+        self.user.profile.subscription_status = 'active'
+        self.user.profile.save()
+        self.client.login(username=self.username, password=self.password)
+
+    @patch('accounts.views.stripe')
+    def test_delete_user_with_correct_email(self, mock_stripe):
+        """Test that user can be deleted with correct email confirmation"""
+        # Mock Stripe API calls to prevent real API calls
+        mock_subscription = MagicMock()
+        mock_subscription.status = 'active'
+        mock_subscription['items'] = {'data': [{'price': {'product': 'prod_test'}}]}
+        mock_stripe.Subscription.retrieve.return_value = mock_subscription
+        
+        response = self.client.post(reverse('delete_user'), {'email': self.email})
+        
+        # Should redirect to home
+        self.assertRedirects(response, reverse('home'))
+        
+        # User should be deleted from database
+        self.assertFalse(User.objects.filter(username=self.username).exists())
+        self.assertFalse(Profile.objects.filter(user__username=self.username).exists())
+
+    @patch('accounts.views.stripe')
+    def test_delete_user_with_incorrect_email(self, mock_stripe):
+        """Test that user is not deleted with incorrect email"""
+        # Mock Stripe API calls to prevent real API calls
+        mock_subscription = MagicMock()
+        mock_subscription.status = 'active'
+        mock_subscription['items'] = {'data': [{'price': {'product': 'prod_test'}}]}
+        mock_stripe.Subscription.retrieve.return_value = mock_subscription
+        
+        response = self.client.post(reverse('delete_user'), {'email': 'wrong@email.com'})
+        
+        # Should redirect to subscription_details
+        self.assertRedirects(response, reverse('subscription_details'))
+        
+        # User should still exist in database
+        self.assertTrue(User.objects.filter(username=self.username).exists())
+        self.assertTrue(Profile.objects.filter(user__username=self.username).exists())
+
+    @patch('accounts.views.stripe')
+    def test_delete_user_with_empty_email(self, mock_stripe):
+        """Test that user is not deleted with empty email"""
+        # Mock Stripe API calls to prevent real API calls
+        mock_subscription = MagicMock()
+        mock_subscription.status = 'active'
+        mock_subscription['items'] = {'data': [{'price': {'product': 'prod_test'}}]}
+        mock_stripe.Subscription.retrieve.return_value = mock_subscription
+        
+        response = self.client.post(reverse('delete_user'), {'email': ''})
+        
+        # Should redirect to subscription_details
+        self.assertRedirects(response, reverse('subscription_details'))
+        
+        # User should still exist in database
+        self.assertTrue(User.objects.filter(username=self.username).exists())
+        self.assertTrue(Profile.objects.filter(user__username=self.username).exists())
+
+    @patch('accounts.views.stripe')
+    def test_delete_user_without_email(self, mock_stripe):
+        """Test that user is not deleted without email parameter"""
+        # Mock Stripe API calls to prevent real API calls
+        mock_subscription = MagicMock()
+        mock_subscription.status = 'active'
+        mock_subscription['items'] = {'data': [{'price': {'product': 'prod_test'}}]}
+        mock_stripe.Subscription.retrieve.return_value = mock_subscription
+        
+        response = self.client.post(reverse('delete_user'), {})
+        
+        # Should redirect to subscription_details
+        self.assertRedirects(response, reverse('subscription_details'))
+        
+        # User should still exist in database
+        self.assertTrue(User.objects.filter(username=self.username).exists())
+        self.assertTrue(Profile.objects.filter(user__username=self.username).exists())
+
+    @patch('accounts.views.stripe')
+    def test_delete_user_case_insensitive_email(self, mock_stripe):
+        """Test that email comparison is case insensitive"""
+        # Mock Stripe API calls to prevent real API calls
+        mock_subscription = MagicMock()
+        mock_subscription.status = 'active'
+        mock_subscription['items'] = {'data': [{'price': {'product': 'prod_test'}}]}
+        mock_stripe.Subscription.retrieve.return_value = mock_subscription
+        
+        response = self.client.post(reverse('delete_user'), {'email': self.email.upper()})
+        
+        # Should redirect to home (successful deletion)
+        self.assertRedirects(response, reverse('home'))
+        
+        # User should be deleted from database
+        self.assertFalse(User.objects.filter(username=self.username).exists())
+        self.assertFalse(Profile.objects.filter(user__username=self.username).exists())
+
+    def test_delete_user_requires_login(self):
+        """Test that delete_user requires authentication"""
+        self.client.logout()
+        response = self.client.post(reverse('delete_user'), {'email': self.email})
+        
+        # Should redirect to login
+        self.assertRedirects(response, f"{reverse('login')}?next={reverse('delete_user')}")
+        
+        # User should still exist in database
+        self.assertTrue(User.objects.filter(username=self.username).exists())
+
+    def test_delete_user_requires_post(self):
+        """Test that delete_user only accepts POST requests"""
+        response = self.client.get(reverse('delete_user'))
+        
+        # Should return 405 Method Not Allowed
+        self.assertEqual(response.status_code, 405)
+        
+        # User should still exist in database
+        self.assertTrue(User.objects.filter(username=self.username).exists())

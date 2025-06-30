@@ -18,6 +18,7 @@ from django.conf import settings
 import stripe
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
+from django.views.decorators.http import require_POST
 
 logger = logging.getLogger(__name__)
 
@@ -99,15 +100,27 @@ def custom_login(request):
 def profile(request):
     profile = request.user.profile
     product_name = None
+    current_period_end = None
+    current_period_start = None
     if profile.stripe_subscription_id:
         try:
             subscription = stripe.Subscription.retrieve(profile.stripe_subscription_id)
             price = subscription['items']['data'][0]['price']
             product = stripe.Product.retrieve(price['product'])
             product_name = product['name']
+            item = subscription['items']['data'][0]
+            current_period_end = item.get('current_period_end')
+            current_period_start = item.get('current_period_start')
         except Exception as e:
             product_name = None  # Optionally log the error
-    return render(request, 'accounts/profile.html', {'profile': profile, 'subscription_product_name': product_name})
+            current_period_end = None
+            current_period_start = None
+    return render(request, 'accounts/profile.html', {
+        'profile': profile,
+        'subscription_product_name': product_name,
+        'current_period_end': current_period_end,
+        'current_period_start': current_period_start,
+    })
 
 
 def home(request):
@@ -298,6 +311,14 @@ def subscription_details(request):
         # Get customer details
         customer = stripe.Customer.retrieve(request.user.profile.stripe_customer_id)
         
+        # Get current period dates from the first item
+        current_period_start = None
+        current_period_end = None
+        if subscription['items']['data']:
+            item = subscription['items']['data'][0]
+            current_period_start = item.get('current_period_start')
+            current_period_end = item.get('current_period_end')
+        
         # Get upcoming invoice if subscription is active
         upcoming_invoice = None
         if subscription.status == 'active':
@@ -310,6 +331,8 @@ def subscription_details(request):
             'subscription': subscription,
             'customer': customer,
             'upcoming_invoice': upcoming_invoice,
+            'current_period_start': current_period_start,
+            'current_period_end': current_period_end,
         }
         
         return render(request, 'accounts/subscription_details.html', context)
@@ -350,3 +373,17 @@ def cancel_subscription_immediately(request):
         messages.error(request, 'An unexpected error occurred while cancelling your subscription.')
     
     return redirect('profile')
+
+@login_required
+@require_POST
+def delete_user(request):
+    email_input = request.POST.get('email')
+    if email_input and email_input.strip().lower() == request.user.email.strip().lower():
+        user = request.user
+        logout(request)
+        user.delete()
+        messages.success(request, 'Your account has been deleted.')
+        return redirect('home')
+    else:
+        messages.error(request, 'The email address you entered does not match your account. Account not deleted.')
+        return redirect('subscription_details')
