@@ -153,6 +153,12 @@
                             <span class="text-muted small">{{ profile.stripe_subscription_id }}</span>
                         </div>
                         {% endif %}
+                        {% if subscription_product_name %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Product Name:</span>
+                            <span class="text-muted small">{{ subscription_product_name }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                     
                     {% if profile.subscription_status == 'active' %}

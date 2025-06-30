@@ -97,7 +97,17 @@ def custom_login(request):
 
 @login_required
 def profile(request):
-    return render(request, 'accounts/profile.html', {'profile': request.user.profile})
+    profile = request.user.profile
+    product_name = None
+    if profile.stripe_subscription_id:
+        try:
+            subscription = stripe.Subscription.retrieve(profile.stripe_subscription_id)
+            price = subscription['items']['data'][0]['price']
+            product = stripe.Product.retrieve(price['product'])
+            product_name = product['name']
+        except Exception as e:
+            product_name = None  # Optionally log the error
+    return render(request, 'accounts/profile.html', {'profile': profile, 'subscription_product_name': product_name})
 
 
 def home(request):
