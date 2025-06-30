@@ -14,4 +14,18 @@ class CustomUserCreationForm(UserCreationForm):
         user.email = self.cleaned_data["email"]
         if commit:
             user.save()
-        return user 
+        return user
+
+class ProfileImageForm(forms.ModelForm):
+    class Meta:
+        from .models import Profile
+        model = Profile
+        fields = ['profile_image']
+
+    def clean_profile_image(self):
+        image = self.cleaned_data.get('profile_image')
+        if image:
+            ext = image.name.split('.')[-1].lower()
+            if ext not in ['jpg', 'jpeg', 'png']:
+                raise forms.ValidationError('Only .jpg and .png files are allowed.')
+        return image 

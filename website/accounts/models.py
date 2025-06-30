@@ -13,6 +13,7 @@ class Profile(models.Model):
     stripe_subscription_id = models.CharField(max_length=100, blank=True, null=True)
     subscription_status = models.CharField(max_length=50, blank=True, null=True)
     # Add more fields as needed
+    profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username} Profile"

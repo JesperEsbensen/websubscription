@@ -13,7 +13,7 @@ from .models import Profile, Membership
 from django.http import HttpResponse
 from django.contrib import messages
 import logging
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, ProfileImageForm
 from django.conf import settings
 import stripe
 from django.views.decorators.csrf import csrf_exempt
@@ -387,3 +387,27 @@ def delete_user(request):
     else:
         messages.error(request, 'The email address you entered does not match your account. Account not deleted.')
         return redirect('subscription_details')
+
+@login_required
+def upload_profile_image(request):
+    if request.method == 'POST':
+        form = ProfileImageForm(request.POST, request.FILES, instance=request.user.profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile image updated successfully.')
+        else:
+            messages.error(request, 'There was an error uploading the image.')
+    return redirect('profile')
+
+@login_required
+def clear_profile_image(request):
+    if request.method == 'POST':
+        profile = request.user.profile
+        if profile.profile_image:
+            profile.profile_image.delete(save=False)
+            profile.profile_image = None
+            profile.save()
+            messages.success(request, 'Profile image removed.')
+        else:
+            messages.info(request, 'No profile image to remove.')
+    return redirect('profile')

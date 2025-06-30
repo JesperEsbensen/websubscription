@@ -12,4 +12,6 @@ urlpatterns = [
     path('reactivate-subscription/', views.reactivate_subscription, name='reactivate_subscription'),
     path('subscription-details/', views.subscription_details, name='subscription_details'),
     path('delete-user/', views.delete_user, name='delete_user'),
+    path('upload-profile-image/', views.upload_profile_image, name='upload_profile_image'),
+    path('clear-profile-image/', views.clear_profile_image, name='clear_profile_image'),
 ] 
