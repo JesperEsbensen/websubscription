@@ -1,0 +1,28 @@
+<div id="bio-edit-container" class="d-flex align-items-center w-100">
+  <form id="bio-edit-form" class="flex-grow-1 d-flex align-items-center" hx-post="{% url 'bio_update_htmx' %}" hx-target="#bio-edit-container" hx-swap="outerHTML" autocomplete="off">
+    {% csrf_token %}
+    <textarea name="bio" id="bio-input" class="form-control form-control-sm" style="min-width: 200px; max-width: 100%; min-height: 38px;" maxlength="2000" required>{{ bio|default:profile.bio }}</textarea>
+    <button type="submit" class="btn btn-link p-0 ms-2" aria-label="Save bio">
+      <i class="bi bi-check"></i>
+    </button>
+  </form>
+  {% if error %}<span class="text-danger ms-2 small">{{ error }}</span>{% endif %}
+</div>
+<script>
+(function() {
+  var textarea = document.getElementById('bio-input');
+  if (textarea) {
+    textarea.focus();
+    textarea.select();
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        htmx.ajax('GET', '{% url 'bio_edit_htmx' %}', {target: '#bio-edit-container', swap: 'outerHTML'});
+      }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        textarea.form.requestSubmit();
+      }
+    });
+  }
+})();
+</script> 

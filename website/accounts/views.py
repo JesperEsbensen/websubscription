@@ -438,3 +438,28 @@ def username_update_htmx(request):
     user.username = new_username
     user.save()
     return render(request, 'accounts/partials/username_display.html', {'user': user})
+
+@login_required
+def bio_edit_htmx(request):
+    user = request.user
+    profile = user.profile
+    return render(request, 'accounts/partials/bio_edit.html', {'profile': profile})
+
+@login_required
+@require_POST
+def bio_update_htmx(request):
+    new_bio = request.POST.get('bio', '').strip()
+    user = request.user
+    profile = user.profile
+    error = None
+    if len(new_bio) > 2000:
+        error = 'Bio must be 2000 characters or less.'
+    if error:
+        return render(request, 'accounts/partials/bio_edit.html', {
+            'profile': profile,
+            'error': error,
+            'bio': new_bio,
+        })
+    profile.bio = new_bio
+    profile.save()
+    return render(request, 'accounts/partials/bio_display.html', {'profile': profile})

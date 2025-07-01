@@ -412,3 +412,47 @@ class UserDeletionTests(TestCase):
         
         # User should still exist in database
         self.assertTrue(User.objects.filter(username=self.username).exists())
+
+class ProfileUpdateHTMXTests(TestCase):
+    def setUp(self):
+        self.username = 'htmxuser'
+        self.password = 'htmxpass123'
+        self.user = User.objects.create_user(username=self.username, password=self.password)
+        self.user.profile.email_confirmed = True
+        self.user.profile.save()
+        self.client.login(username=self.username, password=self.password)
+
+    def test_update_username(self):
+        url = reverse('username_update_htmx')
+        response = self.client.post(url, {'username': 'newhtmxuser'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, 'newhtmxuser')
+        self.assertContains(response, 'newhtmxuser')
+
+    def test_update_username_validation(self):
+        url = reverse('username_update_htmx')
+        # Too short
+        response = self.client.post(url, {'username': 'ab'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertContains(response, 'at least 3 characters')
+        # Empty
+        response = self.client.post(url, {'username': ''}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertContains(response, 'cannot be empty')
+        # Duplicate
+        User.objects.create_user(username='takenuser', password='pass')
+        response = self.client.post(url, {'username': 'takenuser'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertContains(response, 'already taken')
+
+    def test_update_bio(self):
+        url = reverse('bio_update_htmx')
+        new_bio = 'This is my new bio.'
+        response = self.client.post(url, {'bio': new_bio}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.user.profile.refresh_from_db()
+        self.assertEqual(self.user.profile.bio, new_bio)
+        self.assertContains(response, new_bio)
+
+    def test_update_bio_validation(self):
+        url = reverse('bio_update_htmx')
+        # Too long
+        long_bio = 'a' * 2001
+        response = self.client.post(url, {'bio': long_bio}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertContains(response, '2000 characters or less')

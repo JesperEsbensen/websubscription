@@ -7,7 +7,7 @@ from django.dispatch import receiver
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(blank=True)
+    bio = models.TextField(blank=True, max_length=2000)
     email_confirmed = models.BooleanField(default=False)
     stripe_customer_id = models.CharField(max_length=100, blank=True, null=True)
     stripe_subscription_id = models.CharField(max_length=100, blank=True, null=True)
