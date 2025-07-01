@@ -441,6 +441,7 @@ def username_update_htmx(request):
 
 @login_required
 def bio_edit_htmx(request):
+    """Return the profile text edit partial for the current user."""
     user = request.user
     profile = user.profile
     return render(request, 'accounts/partials/bio_edit.html', {'profile': profile})
@@ -448,12 +449,13 @@ def bio_edit_htmx(request):
 @login_required
 @require_POST
 def bio_update_htmx(request):
+    """Update the profile text for the current user via HTMX."""
     new_bio = request.POST.get('bio', '').strip()
     user = request.user
     profile = user.profile
     error = None
     if len(new_bio) > 2000:
-        error = 'Bio must be 2000 characters or less.'
+        error = 'Profile text must be 2000 characters or less.'
     if error:
         return render(request, 'accounts/partials/bio_edit.html', {
             'profile': profile,

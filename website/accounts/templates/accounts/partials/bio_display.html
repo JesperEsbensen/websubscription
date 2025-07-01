@@ -1,6 +1,6 @@
 <div id="bio-edit-container" class="d-flex align-items-center">
-  <span id="bio-text">{{ profile.bio|default:'<span class=\'text-muted fst-italic\'>No bio added yet.</span>'|safe }}</span>
-  <button type="button" class="btn btn-link p-0 ms-2" aria-label="Edit bio"
+  <span id="bio-text">{{ profile.bio|default:'<span class=\'text-muted fst-italic\'>No profile text added yet.</span>'|safe }}</span>
+  <button type="button" class="btn btn-link p-0 ms-2" aria-label="Edit profile text"
     hx-get="{% url 'bio_edit_htmx' %}"
     hx-target="#bio-edit-container"
     hx-swap="outerHTML">
