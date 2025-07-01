@@ -411,3 +411,30 @@ def clear_profile_image(request):
         else:
             messages.info(request, 'No profile image to remove.')
     return redirect('profile')
+
+@login_required
+def username_edit_htmx(request):
+    user = request.user
+    return render(request, 'accounts/partials/username_edit.html', {'user': user})
+
+@login_required
+@require_POST
+def username_update_htmx(request):
+    new_username = request.POST.get('username', '').strip()
+    user = request.user
+    error = None
+    if not new_username:
+        error = 'Username cannot be empty.'
+    elif User.objects.filter(username=new_username).exclude(pk=user.pk).exists():
+        error = 'This username is already taken.'
+    elif len(new_username) < 3:
+        error = 'Username must be at least 3 characters.'
+    # Add more validation as needed
+    if error:
+        return render(request, 'accounts/partials/username_edit.html', {
+            'user': user,
+            'error': error,
+        })
+    user.username = new_username
+    user.save()
+    return render(request, 'accounts/partials/username_display.html', {'user': user})

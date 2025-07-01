@@ -1,0 +1,24 @@
+<div id="username-edit-container" class="d-flex align-items-center">
+  <form id="username-edit-form" class="d-flex align-items-center" hx-post="{% url 'username_update_htmx' %}" hx-target="#username-edit-container" hx-swap="outerHTML" autocomplete="off">
+    {% csrf_token %}
+    <input type="text" name="username" id="username-input" class="form-control form-control-sm" value="{{ user.username }}" style="width: auto; min-width: 120px;" required minlength="3" autofocus>
+    <button type="submit" class="btn btn-link p-0 ms-2" aria-label="Save username">
+      <i class="bi bi-check"></i>
+    </button>
+  </form>
+  {% if error %}<span class="text-danger ms-2 small">{{ error }}</span>{% endif %}
+</div>
+<script>
+(function() {
+  var input = document.getElementById('username-input');
+  if (input) {
+    input.focus();
+    input.select();
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        htmx.ajax('GET', '{% url 'username_edit_htmx' %}', {target: '#username-edit-container', swap: 'outerHTML'});
+      }
+    });
+  }
+})();
+</script> 

@@ -1,0 +1,10 @@
+<div id="username-edit-container" class="d-flex align-items-center">
+  <span id="username-text">{{ user.username }}</span>
+  <button type="button" class="btn btn-link p-0 ms-2" aria-label="Edit username"
+    hx-get="{% url 'username_edit_htmx' %}"
+    hx-target="#username-edit-container"
+    hx-swap="outerHTML">
+    <i class="bi bi-pencil"></i>
+  </button>
+  {% if error %}<span class="text-danger ms-2 small">{{ error }}</span>{% endif %}
+</div> 

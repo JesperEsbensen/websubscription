@@ -25,7 +25,9 @@
                                     <i class="bi bi-pencil"></i>
                                 </button>
                             </div>
-                            <h4 class="mt-3">{{ profile.user.username }}</h4>
+                            <h4 class="mt-3">
+                                {% include 'accounts/partials/username_display.html' with user=profile.user %}
+                            </h4>
                             <p class="text-muted mb-3">
                                 <i class="bi bi-envelope"></i> {{ profile.user.email }}
                             </p>
