@@ -19,6 +19,9 @@ import stripe
 from django.views.decorators.csrf import csrf_exempt
 from functools import wraps
 from django.views.decorators.http import require_POST
+import pyotp
+import qrcode
+import io
 
 logger = logging.getLogger(__name__)
 
@@ -510,3 +513,65 @@ def resend_verification_email(request):
         logger.error(f"Failed to resend confirmation email to {user.email}: {e}")
         messages.error(request, 'Failed to send confirmation email. Please contact support.')
     return redirect('login')
+
+@login_required
+def enable_2fa(request):
+    profile = request.user.profile
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        secret = profile.two_factor_secret
+        if not secret:
+            messages.error(request, 'No 2FA secret found. Please reload the page.')
+            return redirect('enable_2fa')
+        totp = pyotp.TOTP(secret)
+        if totp.verify(code):
+            profile.two_factor_enabled = True
+            profile.save()
+            messages.success(request, 'Two-factor authentication enabled!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Invalid code. Please try again.')
+    else:
+        # Generate a new secret if not already present
+        if not profile.two_factor_secret:
+            secret = pyotp.random_base32()
+            profile.two_factor_secret = secret
+            profile.save()
+        else:
+            secret = profile.two_factor_secret
+        totp = pyotp.TOTP(secret)
+        otp_uri = totp.provisioning_uri(name=request.user.email, issuer_name="WebSubscription")
+        # Generate QR code
+        qr = qrcode.make(otp_uri)
+        buf = io.BytesIO()
+        qr.save(buf, format='PNG')
+        qr_code = buf.getvalue()
+        qr_code_b64 = qr_code.encode('base64') if hasattr(qr_code, 'encode') else None
+        import base64
+        qr_code_b64 = base64.b64encode(qr_code).decode('utf-8')
+        context = {
+            'qr_code_b64': qr_code_b64,
+            'secret': secret,
+        }
+        return render(request, 'accounts/enable_2fa.html', context)
+
+@login_required
+def disable_2fa(request):
+    profile = request.user.profile
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        secret = profile.two_factor_secret
+        if not secret:
+            messages.error(request, 'No 2FA secret found.')
+            return redirect('disable_2fa')
+        import pyotp
+        totp = pyotp.TOTP(secret)
+        if totp.verify(code):
+            profile.two_factor_enabled = False
+            profile.two_factor_secret = ''
+            profile.save()
+            messages.success(request, 'Two-factor authentication has been disabled.')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Invalid code. Please try again.')
+    return render(request, 'accounts/disable_2fa.html')

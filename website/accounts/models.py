@@ -14,6 +14,8 @@ class Profile(models.Model):
     subscription_status = models.CharField(max_length=50, blank=True, null=True)
     # Add more fields as needed
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+    two_factor_enabled = models.BooleanField(default=False)
+    two_factor_secret = models.CharField(max_length=32, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username} Profile"

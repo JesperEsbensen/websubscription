@@ -19,4 +19,6 @@ urlpatterns = [
     path('bio-edit-htmx/', views.bio_edit_htmx, name='bio_edit_htmx'),
     path('bio-update-htmx/', views.bio_update_htmx, name='bio_update_htmx'),
     path('resend-verification/', views.resend_verification_email, name='resend_verification_email'),
+    path('enable-2fa/', views.enable_2fa, name='enable_2fa'),
+    path('disable-2fa/', views.disable_2fa, name='disable_2fa'),
 ] 

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Enable Two-Factor Authentication{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-shield-lock"></i> Enable 2FA
+                    </h3>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <p class="mb-3">Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):</p>
+                    <img src="data:image/png;base64,{{ qr_code_b64 }}" alt="2FA QR Code" class="mb-3" style="width: 200px; height: 200px;"/>
+                    <p class="mb-2"><strong>Secret:</strong> <code>{{ secret }}</code></p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="code" class="form-label">Enter the 6-digit code from your app:</label>
+                            <input type="text" class="form-control text-center" id="code" name="code" maxlength="6" required pattern="\d{6}">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Enable 2FA</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
