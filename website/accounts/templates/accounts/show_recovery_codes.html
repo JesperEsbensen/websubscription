@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Your Recovery Codes{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg">
+                <div class="card-header bg-info text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-shield-lock"></i> Recovery Codes
+                    </h3>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <p class="mb-3">Save these codes in a safe place. Each code can be used once if you lose access to your authenticator app.</p>
+                    <ul class="list-group mb-3">
+                        {% for code in codes %}
+                        <li class="list-group-item list-group-item-light fs-5"><code>{{ code }}</code></li>
+                        {% endfor %}
+                    </ul>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> These codes will not be shown again!
+                    </div>
+                    <a href="{% url 'profile' %}" class="btn btn-primary w-100 mt-3">Back to Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

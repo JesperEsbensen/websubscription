@@ -21,4 +21,6 @@ urlpatterns = [
     path('resend-verification/', views.resend_verification_email, name='resend_verification_email'),
     path('enable-2fa/', views.enable_2fa, name='enable_2fa'),
     path('disable-2fa/', views.disable_2fa, name='disable_2fa'),
+    path('show-recovery-codes/', views.show_recovery_codes, name='show_recovery_codes'),
+    path('2fa-challenge/', views.two_factor_challenge, name='two_factor_challenge'),
 ] 

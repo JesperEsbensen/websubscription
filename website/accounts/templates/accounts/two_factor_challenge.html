@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Two-Factor Authentication{% endblock %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-shield-lock"></i> Two-Factor Authentication
+                    </h3>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="code" class="form-label">Enter the 6-digit code from your authenticator app:</label>
+                            <input type="text" class="form-control text-center" id="code" name="code" maxlength="6" pattern="\d{6}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="recovery_code" class="form-label">Or enter a recovery code:</label>
+                            <input type="text" class="form-control text-center" id="recovery_code" name="recovery_code" maxlength="16">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Verify</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

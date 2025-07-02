@@ -52,17 +52,17 @@
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-box-arrow-in-right"></i> Sign In
                             </button>
-                            {% if show_resend_verification %}
-                            <form method="post" action="{% url 'resend_verification_email' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="username" value="{{ username_attempt|default:form.username.value|default:'' }}">
-                                <button type="submit" class="btn btn-primary btn-lg w-100">
-                                    <i class="bi bi-envelope"></i> Resend verification email
-                                </button>
-                            </form>
-                            {% endif %}
                         </div>
                     </form>
+                    {% if show_resend_verification %}
+                    <form method="post" action="{% url 'resend_verification_email' %}" class="d-grid gap-2 mb-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="username" value="{{ username_attempt|default:form.username.value|default:'' }}">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-envelope"></i> Resend verification email
+                        </button>
+                    </form>
+                    {% endif %}
                     
                     <hr class="my-4">
                     

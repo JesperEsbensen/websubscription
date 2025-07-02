@@ -22,6 +22,9 @@ from django.views.decorators.http import require_POST
 import pyotp
 import qrcode
 import io
+import secrets
+import hashlib
+from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +70,7 @@ def register(request):
                 'confirm_url': confirm_url,
             })
             try:
-                send_mail(subject, message, None, [user.email])
+                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
                 logger.info(f"Confirmation email sent to {user.email}")
             except Exception as e:
                 logger.error(f"Failed to send confirmation email to {user.email}: {e}")
@@ -92,6 +95,9 @@ def custom_login(request):
                     show_resend_verification = True
                     messages.error(request, 'Please confirm your email before logging in.')
                     return render(request, 'accounts/login.html', {'form': form, 'show_resend_verification': show_resend_verification, 'username_attempt': username})
+                if hasattr(user, 'profile') and user.profile.two_factor_enabled:
+                    request.session['2fa_user_id'] = user.pk
+                    return redirect('two_factor_challenge')
                 login(request, user)
                 return redirect('profile')
             else:
@@ -506,13 +512,28 @@ def resend_verification_email(request):
         'confirm_url': confirm_url,
     })
     try:
-        send_mail(subject, message, None, [user.email])
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
         logger.info(f"Resent confirmation email to {user.email}")
         messages.success(request, f'A new confirmation email has been sent to {user.email}.')
     except Exception as e:
         logger.error(f"Failed to resend confirmation email to {user.email}: {e}")
         messages.error(request, 'Failed to send confirmation email. Please contact support.')
     return redirect('login')
+
+def generate_recovery_codes(n=10):
+    return [secrets.token_hex(4) for _ in range(n)]
+
+def hash_code(code):
+    return hashlib.sha256(code.encode()).hexdigest()
+
+@login_required
+def show_recovery_codes(request):
+    # Only show after enabling 2FA
+    codes = request.session.get('recovery_codes')
+    if not codes:
+        messages.error(request, 'No recovery codes to show.')
+        return redirect('profile')
+    return render(request, 'accounts/show_recovery_codes.html', {'codes': codes})
 
 @login_required
 def enable_2fa(request):
@@ -526,9 +547,13 @@ def enable_2fa(request):
         totp = pyotp.TOTP(secret)
         if totp.verify(code):
             profile.two_factor_enabled = True
+            # Generate and store recovery codes
+            codes = generate_recovery_codes()
+            profile.recovery_codes = [hash_code(c) for c in codes]
             profile.save()
+            request.session['recovery_codes'] = codes
             messages.success(request, 'Two-factor authentication enabled!')
-            return redirect('profile')
+            return redirect('show_recovery_codes')
         else:
             messages.error(request, 'Invalid code. Please try again.')
     else:
@@ -546,7 +571,6 @@ def enable_2fa(request):
         buf = io.BytesIO()
         qr.save(buf, format='PNG')
         qr_code = buf.getvalue()
-        qr_code_b64 = qr_code.encode('base64') if hasattr(qr_code, 'encode') else None
         import base64
         qr_code_b64 = base64.b64encode(qr_code).decode('utf-8')
         context = {
@@ -575,3 +599,42 @@ def disable_2fa(request):
         else:
             messages.error(request, 'Invalid code. Please try again.')
     return render(request, 'accounts/disable_2fa.html')
+
+def two_factor_challenge(request):
+    user_id = request.session.get('2fa_user_id')
+    if not user_id:
+        messages.error(request, 'Session expired. Please log in again.')
+        return redirect('login')
+    User = get_user_model()
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('login')
+    profile = user.profile
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        recovery_code = request.POST.get('recovery_code')
+        if code:
+            import pyotp
+            totp = pyotp.TOTP(profile.two_factor_secret)
+            if totp.verify(code):
+                login(request, user)
+                del request.session['2fa_user_id']
+                messages.success(request, 'Logged in with 2FA!')
+                return redirect('profile')
+            else:
+                messages.error(request, 'Invalid 2FA code.')
+        elif recovery_code:
+            from .views import hash_code
+            hashed = hash_code(recovery_code)
+            if hashed in profile.recovery_codes:
+                profile.recovery_codes.remove(hashed)
+                profile.save()
+                login(request, user)
+                del request.session['2fa_user_id']
+                messages.success(request, 'Logged in with recovery code!')
+                return redirect('profile')
+            else:
+                messages.error(request, 'Invalid recovery code.')
+    return render(request, 'accounts/two_factor_challenge.html', {'user': user})

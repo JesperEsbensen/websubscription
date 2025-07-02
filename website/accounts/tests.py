@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode
@@ -6,6 +6,7 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from unittest.mock import patch, MagicMock
 from .models import Profile, Membership
+import pyotp
 
 # Create your tests here.
 
@@ -474,3 +475,79 @@ class ProfileUpdateHTMXTests(TestCase):
         long_bio = 'a' * 2001
         response = self.client.post(url, {'bio': long_bio}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertContains(response, '2000 characters or less')
+
+class TwoFactorAuthTests(TestCase):
+    def setUp(self):
+        self.username = '2fauser'
+        self.password = '2fapass123'
+        self.email = '2fauser@example.com'
+        self.user = User.objects.create_user(username=self.username, password=self.password, email=self.email)
+        self.user.profile.email_confirmed = True
+        self.user.profile.save()
+
+    def enable_2fa_for_user(self):
+        secret = pyotp.random_base32()
+        self.user.profile.two_factor_secret = secret
+        self.user.profile.two_factor_enabled = True
+        # Generate recovery codes
+        from accounts.views import generate_recovery_codes, hash_code
+        codes = generate_recovery_codes()
+        self.user.profile.recovery_codes = [hash_code(c) for c in codes]
+        self.user.profile.save()
+        return secret, codes
+
+    @override_settings(LOGIN_URL='/accounts/login/')
+    def test_login_with_totp(self):
+        secret, codes = self.enable_2fa_for_user()
+        # Step 1: Login with username/password
+        response = self.client.post('/accounts/login/', {'username': self.username, 'password': self.password})
+        self.assertRedirects(response, '/accounts/2fa-challenge/')
+        # Step 2: Submit valid TOTP code
+        totp = pyotp.TOTP(secret)
+        code = totp.now()
+        session = self.client.session
+        session['2fa_user_id'] = self.user.pk
+        session.save()
+        response = self.client.post('/accounts/2fa-challenge/', {'code': code})
+        self.assertRedirects(response, '/profile/')
+
+    @override_settings(LOGIN_URL='/accounts/login/')
+    def test_login_with_recovery_code(self):
+        secret, codes = self.enable_2fa_for_user()
+        # Step 1: Login with username/password
+        response = self.client.post('/accounts/login/', {'username': self.username, 'password': self.password})
+        self.assertRedirects(response, '/accounts/2fa-challenge/')
+        # Step 2: Submit valid recovery code
+        session = self.client.session
+        session['2fa_user_id'] = self.user.pk
+        session.save()
+        recovery_code = codes[0]
+        response = self.client.post('/accounts/2fa-challenge/', {'recovery_code': recovery_code})
+        self.assertRedirects(response, '/profile/')
+        # The code should now be removed
+        self.user.profile.refresh_from_db()
+        from accounts.views import hash_code
+        self.assertNotIn(hash_code(recovery_code), self.user.profile.recovery_codes)
+
+    @override_settings(LOGIN_URL='/accounts/login/')
+    def test_recovery_code_one_time_use(self):
+        secret, codes = self.enable_2fa_for_user()
+        # Step 1: Login with username/password
+        response = self.client.post('/accounts/login/', {'username': self.username, 'password': self.password})
+        self.assertRedirects(response, '/accounts/2fa-challenge/')
+        # Step 2: Submit valid recovery code
+        session = self.client.session
+        session['2fa_user_id'] = self.user.pk
+        session.save()
+        recovery_code = codes[0]
+        response = self.client.post('/accounts/2fa-challenge/', {'recovery_code': recovery_code})
+        self.assertRedirects(response, '/profile/')
+        # Try to use the same code again
+        self.client.logout()
+        response = self.client.post('/accounts/login/', {'username': self.username, 'password': self.password})
+        self.assertRedirects(response, '/accounts/2fa-challenge/')
+        session = self.client.session
+        session['2fa_user_id'] = self.user.pk
+        session.save()
+        response = self.client.post('/accounts/2fa-challenge/', {'recovery_code': recovery_code})
+        self.assertContains(response, 'Invalid recovery code.')
