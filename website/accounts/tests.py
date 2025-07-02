@@ -154,6 +154,24 @@ class AuthTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Subscription')  # Or some text unique to the page
 
+    def test_resend_verification_button_shown_for_unconfirmed_user(self):
+        # Create a user with unconfirmed email
+        unconfirmed_user = User.objects.create_user(
+            username='unconfirmeduser2',
+            email='unconfirmed2@example.com',
+            password='unconfirmedpass123'
+        )
+        unconfirmed_user.profile.email_confirmed = False
+        unconfirmed_user.profile.save()
+        # Try to log in before confirmation
+        response = self.client.post(reverse('login'), {
+            'username': 'unconfirmeduser2',
+            'password': 'unconfirmedpass123',
+        })
+        # The resend button should be present in the response
+        self.assertContains(response, 'Resend verification email')
+        # The form should post to the correct URL
+        self.assertContains(response, reverse('resend_verification_email'))
 
 class SubscriptionCancellationTests(TestCase):
     def setUp(self):

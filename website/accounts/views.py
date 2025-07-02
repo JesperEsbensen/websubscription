@@ -75,25 +75,37 @@ def register(request):
 
 
 def custom_login(request):
+    show_resend_verification = False
+    username_attempt = None
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
+        username_attempt = request.POST.get('username')
         if form.is_valid():
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 if hasattr(user, 'profile') and not user.profile.email_confirmed:
+                    show_resend_verification = True
                     messages.error(request, 'Please confirm your email before logging in.')
-                    return render(request, 'accounts/login.html', {'form': form})
+                    return render(request, 'accounts/login.html', {'form': form, 'show_resend_verification': show_resend_verification, 'username_attempt': username})
                 login(request, user)
                 return redirect('profile')
             else:
                 messages.error(request, 'Invalid username or password.')
         else:
+            # If username exists and is not confirmed, show the button
+            username = request.POST.get('username')
+            try:
+                user = User.objects.get(username=username)
+                if hasattr(user, 'profile') and not user.profile.email_confirmed:
+                    show_resend_verification = True
+            except User.DoesNotExist:
+                pass
             messages.error(request, 'Invalid username or password.')
     else:
         form = AuthenticationForm()
-    return render(request, 'accounts/login.html', {'form': form})
+    return render(request, 'accounts/login.html', {'form': form, 'show_resend_verification': show_resend_verification, 'username_attempt': username_attempt})
 
 
 @login_required
@@ -465,3 +477,36 @@ def bio_update_htmx(request):
     profile.bio = new_bio
     profile.save()
     return render(request, 'accounts/partials/bio_display.html', {'profile': profile})
+
+@require_POST
+def resend_verification_email(request):
+    username = request.POST.get('username')
+    if not username:
+        messages.error(request, 'Please enter your username to resend verification email.')
+        return redirect('login')
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        messages.error(request, 'No user found with that username.')
+        return redirect('login')
+    if hasattr(user, 'profile') and user.profile.email_confirmed:
+        messages.info(request, 'Your email is already confirmed. You can log in.')
+        return redirect('login')
+    # Send confirmation email
+    current_site = get_current_site(request)
+    subject = 'Confirm your email'
+    token = default_token_generator.make_token(user)
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    confirm_url = f"http://{current_site.domain}/confirm-email/{uid}/{token}/"
+    message = render_to_string('accounts/confirm_email.html', {
+        'user': user,
+        'confirm_url': confirm_url,
+    })
+    try:
+        send_mail(subject, message, None, [user.email])
+        logger.info(f"Resent confirmation email to {user.email}")
+        messages.success(request, f'A new confirmation email has been sent to {user.email}.')
+    except Exception as e:
+        logger.error(f"Failed to resend confirmation email to {user.email}: {e}")
+        messages.error(request, 'Failed to send confirmation email. Please contact support.')
+    return redirect('login')

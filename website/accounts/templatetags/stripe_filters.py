@@ -25,4 +25,13 @@ def stripe_amount_to_dollars(amount):
             return f"${amount / 100:.2f}"
         except (TypeError, ValueError):
             return "$0.00"
-    return "$0.00" 
+    return "$0.00"
+
+@register.filter
+def replace(value, arg):
+    """Replaces all occurrences of the first argument with the second in the value."""
+    try:
+        old, new = arg.split(',')
+        return value.replace(old, new)
+    except Exception:
+        return value 

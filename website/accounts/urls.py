@@ -18,4 +18,5 @@ urlpatterns = [
     path('username-update-htmx/', views.username_update_htmx, name='username_update_htmx'),
     path('bio-edit-htmx/', views.bio_edit_htmx, name='bio_edit_htmx'),
     path('bio-update-htmx/', views.bio_update_htmx, name='bio_update_htmx'),
+    path('resend-verification/', views.resend_verification_email, name='resend_verification_email'),
 ] 
