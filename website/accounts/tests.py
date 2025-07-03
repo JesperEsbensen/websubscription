@@ -5,8 +5,10 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from unittest.mock import patch, MagicMock
-from .models import Profile, Membership
+from .models import Profile, Membership, SubscriptionEvent
 import pyotp
+from django.utils import timezone
+from datetime import timedelta
 
 # Create your tests here.
 
@@ -551,3 +553,70 @@ class TwoFactorAuthTests(TestCase):
         session.save()
         response = self.client.post('/accounts/2fa-challenge/', {'recovery_code': recovery_code})
         self.assertContains(response, 'Invalid recovery code.')
+
+class SubscriptionEventLogTests(TestCase):
+    def setUp(self):
+        self.username = 'eventuser'
+        self.password = 'eventpass123'
+        self.user = User.objects.create_user(username=self.username, password=self.password)
+        self.user.profile.email_confirmed = True
+        self.user.profile.stripe_customer_id = 'cus_event123'
+        self.user.profile.stripe_subscription_id = 'sub_event123'
+        self.user.profile.subscription_status = 'active'
+        self.user.profile.save()
+        self.client.login(username=self.username, password=self.password)
+        # Create a membership for product name lookup
+        self.membership = Membership.objects.create(name='Gold', stripe_price_id='price_gold', description='Gold plan')
+        # Create 25 events (to test pagination)
+        now = timezone.now()
+        for i in range(25):
+            event_type = 'customer.subscription.created' if i == 0 else 'invoice.paid'
+            data = {
+                'object': {
+                    'items': {'data': [{'price': {'id': 'price_gold'}}]},
+                    'amount_paid': 1000 + i * 100,
+                    'currency': 'usd',
+                }
+            } if event_type == 'customer.subscription.created' else {
+                'object': {
+                    'amount_paid': 1000 + i * 100,
+                    'currency': 'usd',
+                }
+            }
+            SubscriptionEvent.objects.create(
+                event_id=f'evt_{i}',
+                event_type=event_type,
+                created=now - timedelta(days=i),
+                data=data,
+                customer_id='cus_event123',
+                subscription_id='sub_event123',
+            )
+
+    def test_event_log_renders_latest_20(self):
+        response = self.client.get(reverse('subscription_details'))
+        self.assertEqual(response.status_code, 200)
+        # Only 20 events should be shown
+        self.assertContains(response, 'Show next')
+        self.assertNotContains(response, 'Show previous')
+        # The most recent event (evt_0) should be present
+        self.assertContains(response, 'Subscription Created: Gold')
+        # The 21st event (evt_20) should not be present
+        self.assertNotContains(response, 'evt_20')
+
+    def test_event_log_pagination_next_and_previous(self):
+        # Go to page 2
+        response = self.client.get(reverse('subscription_details') + '?page=2')
+        self.assertEqual(response.status_code, 200)
+        # Should show both next and previous buttons (since there are 25 events)
+        self.assertContains(response, 'Show next')
+        self.assertContains(response, 'Show previous')
+        # The oldest event (evt_24) should be present on page 2
+        self.assertContains(response, 'evt_24')
+        # The most recent event (evt_0) should not be present
+        self.assertNotContains(response, 'evt_0')
+
+    def test_event_log_no_events(self):
+        # Remove all events
+        SubscriptionEvent.objects.all().delete()
+        response = self.client.get(reverse('subscription_details'))
+        self.assertContains(response, 'No relevant events found for this subscription.')

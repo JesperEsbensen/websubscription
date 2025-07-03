@@ -1,5 +1,6 @@
 from django import template
 import json
+from django.apps import apps
 
 register = template.Library()
 
@@ -47,4 +48,47 @@ def event_friendly_name_with_cancel_check(event):
             return 'Subscription Cancelled at End of Period'
         if obj and prev and obj.get('cancel_at_period_end') is False and prev.get('cancel_at_period_end') is True:
             return 'Subscription Reactivated'
-    return event_friendly_name(event_type) 
+    return event_friendly_name(event_type)
+
+@register.filter
+def event_invoice_amount(event):
+    data = getattr(event, 'data', None)
+    if not data or not isinstance(data, dict):
+        return ""
+    obj = data.get('object')
+    if not obj:
+        return ""
+    # Use amount_paid if available, else amount_due
+    amount = obj.get('amount_paid') or obj.get('amount_due')
+    if amount is not None:
+        currency = obj.get('currency', '').upper()
+        return f"{amount / 100:.2f} {currency}"
+    return ""
+
+@register.filter
+def event_subscription_product_name(event):
+    data = getattr(event, 'data', None)
+    if not data or not isinstance(data, dict):
+        return ""
+    obj = data.get('object')
+    if not obj:
+        return ""
+    # Try to get the price id from the first item
+    items = obj.get('items', {}).get('data', [])
+    if items:
+        price = items[0].get('price')
+        price_id = None
+        if price:
+            if isinstance(price, dict):
+                price_id = price.get('id')
+            elif isinstance(price, str):
+                price_id = price
+        if price_id:
+            Membership = apps.get_model('accounts', 'Membership')
+            membership = Membership.objects.filter(stripe_price_id=price_id).first()
+            if membership:
+                return membership.name
+        # Fallback to price nickname or id
+        if price and isinstance(price, dict):
+            return price.get('nickname') or price.get('id')
+    return "" 

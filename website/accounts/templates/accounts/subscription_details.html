@@ -18,16 +18,21 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <h5><i class="bi bi-info-circle"></i> Status</h5>
-                            <span class="badge {% if subscription.status == 'active' %}bg-success{% elif subscription.status == 'canceled' %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
-                                {{ subscription.status|title }}
-                            </span>
+                            {% if subscription %}
+                                <span class="badge {% if subscription.status == 'active' %}bg-success{% elif subscription.status == 'canceled' %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
+                                    {{ subscription.status|title }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-primary fs-6">Free</span>
+                            {% endif %}
                         </div>
                         <div class="col-md-6">
                             <h5><i class="bi bi-calendar"></i> Created</h5>
-                            <p class="mb-0">{{ subscription.created|stripe_timestamp_to_date }}</p>
+                            <p class="mb-0">{% if subscription %}{{ subscription.created|stripe_timestamp_to_date }}{% else %}-{% endif %}</p>
                         </div>
                     </div>
 
+                    {% if subscription %}
                     <!-- Billing Information -->
                     <div class="mb-4">
                         <h5><i class="bi bi-credit-card"></i> Billing Information</h5>
@@ -138,10 +143,32 @@
                             </button>
                         </form>
                         {% endif %}
+                        {% if subscription.status == 'active' or subscription.cancel_at_period_end %}
+                        <a href="{% url 'subscribe' %}" class="btn btn-primary">
+                            <i class="bi bi-arrow-repeat"></i> Change Subscription
+                        </a>
+                        {% else %}
+                        <a href="{% url 'subscribe' %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Subscribe
+                        </a>
+                        {% endif %}
                         <a href="{% url 'profile' %}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Back to Profile
                         </a>
                     </div>
+                    {% else %}
+                    <div class="alert alert-secondary mb-4">
+                        <i class="bi bi-info-circle"></i> You do not have an active subscription. Subscribe to access premium features.
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'subscribe' %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Subscribe
+                        </a>
+                        <a href="{% url 'profile' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Profile
+                        </a>
+                    </div>
+                    {% endif %}
                     <hr class="my-4">
                     <form method="post" action="{% url 'delete_user' %}" onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.');">
                         {% csrf_token %}
@@ -166,18 +193,28 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <ul class="list-group list-group-flush">
+                    <ul class="list-unstyled" style="margin-bottom:0;">
                         {% for event in subscription_events %}
                             {% if event.event_type|startswith:'invoice.' or event.event_type in 'customer.subscription.created customer.subscription.deleted customer.subscription.updated' %}
-                                <li class="list-group-item">
-                                    <span class="text-muted small">{{ event.created|date:"Y-m-d H:i" }}</span>
-                                    <span class="ms-2"><strong>{{ event|event_friendly_name_with_cancel_check }}</strong></span>
+                                <li style="padding: 0.1rem 0 0.1rem 0; border: none; line-height: 1.2; display: flex; align-items: baseline;">
+                                    <span class="ms-0" style="min-width: 90px; flex-shrink: 0; font-size: 1rem; color: #6c757d;">{{ event.created|date:"Y-m-d H:i" }}</span>
+                                    <span class="ms-2" style="word-break: break-word; white-space: pre-line; flex: 1; font-size: 1rem;">{{ event|event_friendly_name_with_cancel_check }}{% if event.event_type == 'customer.subscription.created' %}: {{ event|event_subscription_product_name }}{% endif %}{% if event.event_type|startswith:'invoice.' %} <span class="text-success">{{ event|event_invoice_amount }}</span>{% endif %}</span>
                                 </li>
                             {% endif %}
                         {% empty %}
-                            <li class="list-group-item text-muted">No relevant events found for this subscription.</li>
+                            <li class="text-muted">No relevant events found for this subscription.</li>
                         {% endfor %}
                     </ul>
+                    <div class="d-flex gap-2 mt-2">
+                        <form method="get" class="flex-fill">
+                            <input type="hidden" name="page" value="{{ previous_page_number|default:page_obj.number }}">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm w-100" {% if not has_previous %}disabled{% endif %}>Show previous</button>
+                        </form>
+                        <form method="get" class="flex-fill">
+                            <input type="hidden" name="page" value="{{ next_page_number|default:page_obj.number }}">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm w-100" {% if not has_next %}disabled{% endif %}>Show next</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

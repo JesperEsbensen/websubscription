@@ -107,7 +107,7 @@
                             <span>Subscription Status:</span>
                             {% if profile.subscription_status == 'active' %}
                                 <span class="badge bg-success">{{ profile.subscription_status|title }}</span>
-                            {% elif profile.subscription_status == 'canceled' %}
+                            {% elif profile.subscription_status == 'canceled' and profile.stripe_subscription_id %}
                                 <span class="badge bg-warning">{{ profile.subscription_status|title }}</span>
                             {% else %}
                                 <span class="badge bg-primary">Free</span>

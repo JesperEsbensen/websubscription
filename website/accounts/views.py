@@ -27,6 +27,8 @@ import hashlib
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timezone as dt_timezone
+from django.core.paginator import Paginator
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +87,9 @@ def register(request):
 def custom_login(request):
     show_resend_verification = False
     username_attempt = None
+    # Clear all messages on login page load
+    storage = messages.get_messages(request)
+    list(storage)  # iterate to clear
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         username_attempt = request.POST.get('username')
@@ -165,7 +170,15 @@ def confirm_email(request, uidb64, token):
 
 def subscribe(request):
     memberships = Membership.objects.all()
-    return render(request, "accounts/subscribe.html", {"memberships": memberships, "stripe_pk": settings.STRIPE_PUBLISHABLE_KEY})
+    current_price_id = None
+    if request.user.is_authenticated and hasattr(request.user, 'profile') and request.user.profile.stripe_subscription_id and request.user.profile.subscription_status == 'active':
+        try:
+            subscription = stripe.Subscription.retrieve(request.user.profile.stripe_subscription_id)
+            if subscription['items']['data']:
+                current_price_id = subscription['items']['data'][0]['price']['id']
+        except Exception:
+            pass
+    return render(request, "accounts/subscribe.html", {"memberships": memberships, "stripe_pk": settings.STRIPE_PUBLISHABLE_KEY, "current_price_id": current_price_id})
 
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
@@ -193,7 +206,7 @@ def create_checkout_session(request, membership_id):
             'price': membership.stripe_price_id,
             'quantity': 1,
         }],
-        success_url=request.build_absolute_uri('/accounts/success/'),
+        success_url=request.build_absolute_uri(reverse('subscription_details')),
         cancel_url=request.build_absolute_uri('/accounts/cancel/'),
     )
     return redirect(session.url)
@@ -255,7 +268,10 @@ def stripe_webhook(request):
         from .models import Profile
         try:
             profile = Profile.objects.get(stripe_customer_id=stripe_customer_id)
-            profile.stripe_subscription_id = stripe_subscription_id
+            if event['type'] == 'customer.subscription.deleted':
+                profile.stripe_subscription_id = None
+            else:
+                profile.stripe_subscription_id = stripe_subscription_id
             profile.subscription_status = status
             profile.save()
             logger.info(f'Updated profile for customer {stripe_customer_id} with subscription {stripe_subscription_id} and status {status}')
@@ -288,7 +304,7 @@ def cancel_subscription(request):
         logger.info(f'Cancelled subscription {request.user.profile.stripe_subscription_id} for user {request.user.username}')
         
         # Update local subscription status
-        request.user.profile.subscription_status = 'canceled'
+        #request.user.profile.subscription_status = 'canceled'
         request.user.profile.save()
         
         messages.success(request, 'Your subscription has been cancelled successfully. You will continue to have access until the end of your current billing period.')
@@ -336,55 +352,53 @@ def reactivate_subscription(request):
 @login_required
 def subscription_details(request):
     """Display detailed subscription information"""
-    if not request.user.profile.stripe_subscription_id:
-        messages.error(request, 'No subscription found.')
-        return redirect('profile')
-    
-    try:
-        # Get subscription details from Stripe
-        subscription = stripe.Subscription.retrieve(request.user.profile.stripe_subscription_id)
-        
-        # Get customer details
-        customer = stripe.Customer.retrieve(request.user.profile.stripe_customer_id)
-        
-        # Get current period dates from the first item
-        current_period_start = None
-        current_period_end = None
-        if subscription['items']['data']:
-            item = subscription['items']['data'][0]
-            current_period_start = item.get('current_period_start')
-            current_period_end = item.get('current_period_end')
-        
-        # Get upcoming invoice if subscription is active
-        upcoming_invoice = None
-        if subscription.status == 'active':
-            try:
-                upcoming_invoice = stripe.Invoice.upcoming(customer=request.user.profile.stripe_customer_id)
-            except Exception:
-                pass
-        
-        # Fetch subscription events for this customer
-        subscription_events = SubscriptionEvent.objects.filter(customer_id=request.user.profile.stripe_customer_id).order_by('-created')
-        
-        context = {
-            'subscription': subscription,
-            'customer': customer,
-            'upcoming_invoice': upcoming_invoice,
-            'current_period_start': current_period_start,
-            'current_period_end': current_period_end,
-            'subscription_events': subscription_events,
-        }
-        
-        return render(request, 'accounts/subscription_details.html', context)
-        
-    except stripe.error.StripeError as e:
-        logger.error(f'Error retrieving subscription details: {e}')
-        messages.error(request, f'Error retrieving subscription details: {str(e)}')
-        return redirect('profile')
-    except Exception as e:
-        logger.error(f'Unexpected error retrieving subscription details: {e}')
-        messages.error(request, 'An unexpected error occurred while retrieving subscription details.')
-        return redirect('profile')
+    profile = request.user.profile
+    subscription = None
+    customer = None
+    current_period_start = None
+    current_period_end = None
+    upcoming_invoice = None
+    if profile.stripe_subscription_id:
+        try:
+            subscription = stripe.Subscription.retrieve(profile.stripe_subscription_id)
+            customer = stripe.Customer.retrieve(profile.stripe_customer_id)
+            if subscription['items']['data']:
+                item = subscription['items']['data'][0]
+                current_period_start = item.get('current_period_start')
+                current_period_end = item.get('current_period_end')
+            if subscription.status == 'active':
+                try:
+                    upcoming_invoice = stripe.Invoice.upcoming(customer=profile.stripe_customer_id)
+                except Exception:
+                    pass
+        except stripe.error.StripeError as e:
+            logger.error(f'Error retrieving subscription details: {e}')
+            messages.error(request, f'Error retrieving subscription details: {str(e)}')
+        except Exception as e:
+            logger.error(f'Unexpected error retrieving subscription details: {e}')
+            messages.error(request, 'An unexpected error occurred while retrieving subscription details.')
+    # Pagination logic for subscription events (page-based)
+    all_events = SubscriptionEvent.objects.filter(customer_id=profile.stripe_customer_id).order_by('-created')
+    page_size = 20
+    page_number = int(request.GET.get('page', 1))
+    paginator = Paginator(all_events, page_size)
+    page_obj = paginator.get_page(page_number)
+    subscription_events = page_obj.object_list
+    context = {
+        'subscription': subscription,
+        'customer': customer,
+        'upcoming_invoice': upcoming_invoice,
+        'current_period_start': current_period_start,
+        'current_period_end': current_period_end,
+        'subscription_events': subscription_events,
+        'page_obj': page_obj,
+        'has_next': page_obj.has_next(),
+        'has_previous': page_obj.has_previous(),
+        'next_page_number': page_obj.next_page_number() if page_obj.has_next() else None,
+        'previous_page_number': page_obj.previous_page_number() if page_obj.has_previous() else None,
+        'profile': profile,
+    }
+    return render(request, 'accounts/subscription_details.html', context)
 
 @login_required
 def cancel_subscription_immediately(request):
@@ -400,7 +414,8 @@ def cancel_subscription_immediately(request):
         logger.info(f'Immediately cancelled subscription {request.user.profile.stripe_subscription_id} for user {request.user.username}')
         
         # Update local subscription status
-        request.user.profile.subscription_status = 'canceled'
+        # request.user.profile.subscription_status = 'canceled'
+        request.user.profile.stripe_subscription_id = None
         request.user.profile.save()
         
         messages.success(request, 'Your subscription has been cancelled immediately. You no longer have access to premium features.')
