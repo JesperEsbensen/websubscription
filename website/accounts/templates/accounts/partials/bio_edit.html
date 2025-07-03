@@ -17,7 +17,11 @@
     textarea.select();
     textarea.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        htmx.ajax('GET', '{% url 'bio_edit_htmx' %}', {target: '#bio-edit-container', swap: 'outerHTML'});
+        var url = '{% url 'bio_edit_htmx' %}';
+        htmx.ajax('GET', url, {
+          target: '#bio-edit-container', 
+          swap: 'outerHTML'
+        });
       }
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();

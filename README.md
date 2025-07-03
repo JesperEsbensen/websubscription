@@ -35,4 +35,11 @@ No local installation or npm package is required for Bootstrap or its icons. You
 
 ## Start Django Project
 
+## Setup of ngrok
+Testing with stripe in the loop requirest a connection between local host and strips api.
+This can be established using ngrok a service connectin from stripe to a local port on the local web sever.
+
+Run with: ngrok http http://localhost:8080
+
+
 

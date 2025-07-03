@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
-from .models import Profile, Membership
+from .models import Profile, Membership, SubscriptionEvent
 from django.http import HttpResponse
 from django.contrib import messages
 import logging
@@ -25,6 +25,8 @@ import io
 import secrets
 import hashlib
 from django.contrib.auth import get_user_model
+from django.utils import timezone
+from datetime import timezone as dt_timezone
 
 logger = logging.getLogger(__name__)
 
@@ -232,6 +234,19 @@ def stripe_webhook(request):
         logger.error(f'Invalid signature: {e}')
         return HttpResponse(status=400)
 
+    # Only log relevant events
+    if event['type'].startswith('customer.subscription') or event['type'].startswith('invoice.'):
+        SubscriptionEvent.objects.get_or_create(
+            event_id=event['id'],
+            defaults={
+                'event_type': event['type'],
+                'created': timezone.datetime.fromtimestamp(event['created'], tz=dt_timezone.utc),
+                'data': event['data'],
+                'customer_id': event['data']['object'].get('customer'),
+                'subscription_id': event['data']['object'].get('id'),
+            }
+        )
+
     if event['type'] in ['customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted']:
         subscription = event['data']['object']
         stripe_subscription_id = subscription['id']
@@ -348,12 +363,16 @@ def subscription_details(request):
             except Exception:
                 pass
         
+        # Fetch subscription events for this customer
+        subscription_events = SubscriptionEvent.objects.filter(customer_id=request.user.profile.stripe_customer_id).order_by('-created')
+        
         context = {
             'subscription': subscription,
             'customer': customer,
             'upcoming_invoice': upcoming_invoice,
             'current_period_start': current_period_start,
             'current_period_end': current_period_end,
+            'subscription_events': subscription_events,
         }
         
         return render(request, 'accounts/subscription_details.html', context)
@@ -612,6 +631,7 @@ def two_factor_challenge(request):
         messages.error(request, 'User not found.')
         return redirect('login')
     profile = user.profile
+    error_message = None
     if request.method == 'POST':
         code = request.POST.get('code')
         recovery_code = request.POST.get('recovery_code')
@@ -624,7 +644,8 @@ def two_factor_challenge(request):
                 messages.success(request, 'Logged in with 2FA!')
                 return redirect('profile')
             else:
-                messages.error(request, 'Invalid 2FA code.')
+                error_message = 'Invalid 2FA code.'
+                messages.error(request, error_message)
         elif recovery_code:
             from .views import hash_code
             hashed = hash_code(recovery_code)
@@ -636,5 +657,6 @@ def two_factor_challenge(request):
                 messages.success(request, 'Logged in with recovery code!')
                 return redirect('profile')
             else:
-                messages.error(request, 'Invalid recovery code.')
-    return render(request, 'accounts/two_factor_challenge.html', {'user': user})
+                error_message = 'Invalid recovery code.'
+                messages.error(request, error_message)
+    return render(request, 'accounts/two_factor_challenge.html', {'user': user, 'error_message': error_message})

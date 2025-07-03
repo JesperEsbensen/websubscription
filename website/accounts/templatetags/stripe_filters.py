@@ -25,7 +25,7 @@ def stripe_amount_to_dollars(amount):
             return f"${amount / 100:.2f}"
         except (TypeError, ValueError):
             return "$0.00"
-    return "$0.00"
+    return "$0.00" 
 
 @register.filter
 def replace(value, arg):

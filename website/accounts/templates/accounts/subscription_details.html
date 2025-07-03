@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load stripe_filters %}
+{% load event_filters %}
 {% block title %}Subscription Details - WebSubscription{% endblock %}
 
 {% block content %}
@@ -157,38 +158,26 @@
         </div>
 
         <div class="col-lg-4">
-            <!-- Customer Information -->
+            <!-- Subscription Event Log -->
             <div class="card shadow-lg mb-4">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-person"></i> Customer Information
+                        <i class="bi bi-clock-history"></i> Subscription Event Log
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <strong>Name:</strong>
-                        <p class="text-muted mb-0">{{ customer.name|default:"Not provided" }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <strong>Email:</strong>
-                        <p class="text-muted mb-0">{{ customer.email }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <strong>Customer ID:</strong>
-                        <p class="text-muted small mb-0">{{ customer.id }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Subscription ID -->
-            <div class="card shadow-lg">
-                <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-hash"></i> Subscription ID
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted small mb-0">{{ subscription.id }}</p>
+                    <ul class="list-group list-group-flush">
+                        {% for event in subscription_events %}
+                            {% if event.event_type|startswith:'invoice.' or event.event_type in 'customer.subscription.created customer.subscription.deleted customer.subscription.updated' %}
+                                <li class="list-group-item">
+                                    <span class="text-muted small">{{ event.created|date:"Y-m-d H:i" }}</span>
+                                    <span class="ms-2"><strong>{{ event|event_friendly_name_with_cancel_check }}</strong></span>
+                                </li>
+                            {% endif %}
+                        {% empty %}
+                            <li class="list-group-item text-muted">No relevant events found for this subscription.</li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
         </div>

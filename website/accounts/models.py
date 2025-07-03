@@ -33,3 +33,14 @@ class Membership(models.Model):
 
     def __str__(self):
         return self.name
+
+class SubscriptionEvent(models.Model):
+    event_id = models.CharField(max_length=255, unique=True)
+    event_type = models.CharField(max_length=255)
+    created = models.DateTimeField()
+    data = models.JSONField()
+    customer_id = models.CharField(max_length=255, blank=True, null=True)
+    subscription_id = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.event_type} ({self.event_id})"
