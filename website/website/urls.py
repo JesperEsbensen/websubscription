@@ -31,4 +31,6 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('logged-in/', accounts_views.logged_in_page, name='logged_in_page'),
     path('subscribing/', accounts_views.subscribing_page, name='subscribing_page'),
+    path('chatbot/', include('chatbot.urls')),
+    path('guestbook/', include('guestbook.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

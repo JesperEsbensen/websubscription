@@ -19,6 +19,7 @@ This project is a basic website based on django 5.2 that offers:
 - Custom login and registration pages with user feedback.
 - The user can purchase a subscription through Stripe.
 - Test covering most of above have been implemented.
+- Two factor authentication (2FA) with authenticator app and 10 resque keys.
 
 ## Installation
 
@@ -56,5 +57,7 @@ This can be established using ngrok a service connectin from stripe to a local p
 
 Run with: ngrok http http://localhost:8080
 
+TODO list:
+Delete user.
 
 

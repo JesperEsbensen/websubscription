@@ -52,7 +52,19 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <!-- Guest Book - visible to all users -->
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm d-flex align-items-center" href="{% url 'guestbook:guestbook_list' %}" style="margin-right: 8px;">
+                            <i class="bi bi-book me-1"></i> Guest Book
+                        </a>
+                    </li>
+                    
                     {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm d-flex align-items-center" href="{% url 'chatbot_main' %}" style="margin-right: 8px;">
+                                <i class="bi bi-robot me-1"></i> Chatbot
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="btn btn-outline-light btn-sm d-flex align-items-center" href="{% url 'profile' %}" style="margin-right: 8px;">
                                 <i class="bi bi-person me-1"></i> {{ user.username }}
@@ -100,6 +112,7 @@
                     <h6>Quick Links</h6>
                     <ul class="list-unstyled">
                         <li><a href="{% url 'home' %}" class="text-muted text-decoration-none">Home</a></li>
+                        <li><a href="{% url 'guestbook:guestbook_list' %}" class="text-muted text-decoration-none">Guest Book</a></li>
                         <li><a href="{% url 'register' %}" class="text-muted text-decoration-none">Register</a></li>
                         <li><a href="{% url 'login' %}" class="text-muted text-decoration-none">Login</a></li>
                     </ul>

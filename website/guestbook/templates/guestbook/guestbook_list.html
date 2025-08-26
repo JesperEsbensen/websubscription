@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Guest Book - WebSubscription{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-primary">
+                    <i class="bi bi-book"></i> Guest Book
+                </h1>
+                <p class="lead text-muted">
+                    Share your thoughts and see what others have to say about WebSubscription
+                </p>
+            </div>
+
+            <!-- Add Comment Form -->
+            {% if user.is_authenticated %}
+                <div class="card shadow-lg mb-5">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-pencil-square"></i> Add Your Comment
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" id="comment-form">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ form.content.label_tag }}
+                                {{ form.content }}
+                                {% if form.content.help_text %}
+                                    <div class="form-text">{{ form.content.help_text }}</div>
+                                {% endif %}
+                                {% if form.content.errors %}
+                                    <div class="alert alert-danger mt-2">
+                                        {{ form.content.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Post Comment
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center mb-5">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Please log in</strong> to add your comment to the guest book.
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-sm ms-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Login
+                    </a>
+                </div>
+            {% endif %}
+
+            <!-- Comments Section -->
+            <div class="card shadow-lg">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-chat-dots"></i> Comments ({{ comments.count }})
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if comments %}
+                        <div id="comments-container">
+                            {% for comment in comments %}
+                                <div class="comment-item border-bottom pb-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="mb-1 fw-bold text-primary">
+                                                <i class="bi bi-person-circle"></i> {{ comment.author.username }}
+                                            </h6>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock"></i> {{ comment.created_at|date:"F j, Y \a\t g:i A" }}
+                                            </small>
+                                        </div>
+                                        {% if comment.author == user %}
+                                            <span class="badge bg-success">Your comment</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="comment-content">
+                                        {{ comment.content|linebreaks }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-chat-dots text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted mt-3">No comments yet</h5>
+                            <p class="text-muted">Be the first to share your thoughts!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Messages -->
+{% if messages %}
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<style>
+.comment-item:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.comment-content {
+    line-height: 1.6;
+    color: #333;
+}
+</style>
+{% endblock %}
