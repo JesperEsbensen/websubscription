@@ -599,7 +599,7 @@ def enable_2fa(request):
         else:
             secret = profile.two_factor_secret
         totp = pyotp.TOTP(secret)
-        otp_uri = totp.provisioning_uri(name=request.user.email, issuer_name="WebSubscription")
+        otp_uri = totp.provisioning_uri(name=request.user.email, issuer_name="ESG-support")
         # Generate QR code
         qr = qrcode.make(otp_uri)
         buf = io.BytesIO()

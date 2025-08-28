@@ -1,24 +1,456 @@
 {% extends 'base.html' %}
-{% block title %}Chatbot - WebSubscription{% endblock %}
+{% block title %}Chatbot - ESG-support{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h3 class="mb-0">
-                        <i class="bi bi-robot"></i> Chatbot
-                    </h3>
+<div class="container-fluid my-4">
+    <div class="row h-100">
+        <!-- Left Column - Headers/Sidebar -->
+        <div class="col-md-3 col-lg-3">
+            <div class="card shadow-lg h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list"></i> Chat Sessions
+                    </h5>
                 </div>
-                <div class="card-body p-4 text-center">
-                    <p class="lead mb-4">
-                        Welcome to the Chatbot! This is the main page for the chatbot app.
-                    </p>
-                    <!-- Chatbot UI will go here -->
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="chat-sessions">
+                        <a href="#" class="list-group-item list-group-item-action active" data-session="general">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">General Support</h6>
+                                <small>Active</small>
+                            </div>
+                            <p class="mb-1 text-muted small">General questions and support</p>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" data-session="esg">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">ESG Guidance</h6>
+                                <small>2 min ago</small>
+                            </div>
+                            <p class="mb-1 text-muted small">ESG compliance and best practices</p>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" data-session="technical">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Technical Support</h6>
+                                <small>1 hour ago</small>
+                            </div>
+                            <p class="mb-1 text-muted small">Technical issues and troubleshooting</p>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" data-session="billing">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Billing & Subscriptions</h6>
+                                <small>2 hours ago</small>
+                            </div>
+                            <p class="mb-1 text-muted small">Payment and subscription questions</p>
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-outline-primary btn-sm w-100" id="new-chat-btn">
+                        <i class="bi bi-plus-circle"></i> New Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Chat Dialog -->
+        <div class="col-md-9 col-lg-9">
+            <div class="card shadow-lg h-100">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-robot"></i> General Support
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-light btn-sm" id="clear-chat-btn">
+                            <i class="bi bi-trash"></i> Clear
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" id="export-chat-btn">
+                            <i class="bi bi-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Chat Messages Area -->
+                <div class="card-body p-0" style="height: 60vh; overflow-y: auto;">
+                    <div class="chat-messages p-3" id="chat-messages">
+                        <!-- Welcome Message -->
+                        <div class="message bot-message mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar bot-avatar">
+                                        <i class="bi bi-robot"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="message-content">
+                                        <div class="message-header">
+                                            <strong>ESG Assistant</strong>
+                                            <small class="text-muted ms-2">Just now</small>
+                                        </div>
+                                        <div class="message-text">
+                                            Hello! I'm your ESG support assistant. I'm here to help you with:
+                                            <ul class="mt-2 mb-0">
+                                                <li>ESG compliance questions</li>
+                                                <li>Technical support</li>
+                                                <li>Billing and subscription help</li>
+                                                <li>General platform guidance</li>
+                                            </ul>
+                                            How can I assist you today?
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample User Message -->
+                        <div class="message user-message mb-3">
+                            <div class="d-flex justify-content-end">
+                                <div class="flex-grow-1 me-3 text-end">
+                                    <div class="message-content">
+                                        <div class="message-header">
+                                            <small class="text-muted me-2">Just now</small>
+                                            <strong>You</strong>
+                                        </div>
+                                        <div class="message-text">
+                                            Hi! I have a question about ESG reporting requirements.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <div class="avatar user-avatar">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sample Bot Response -->
+                        <div class="message bot-message mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar bot-avatar">
+                                        <i class="bi bi-robot"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="message-content">
+                                        <div class="message-header">
+                                            <strong>ESG Assistant</strong>
+                                            <small class="text-muted ms-2">Just now</small>
+                                        </div>
+                                        <div class="message-text">
+                                            I'd be happy to help you with ESG reporting requirements! ESG reporting typically covers three main areas:
+                                            <br><br>
+                                            <strong>Environmental (E):</strong> Climate change, carbon emissions, energy efficiency, waste management
+                                            <br>
+                                            <strong>Social (S):</strong> Labor practices, human rights, community relations, data privacy
+                                            <br>
+                                            <strong>Governance (G):</strong> Board diversity, executive compensation, business ethics, transparency
+                                            <br><br>
+                                            What specific aspect of ESG reporting would you like to know more about?
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input Area -->
+                <div class="card-footer">
+                    <form id="chat-form" class="d-flex gap-2">
+                        <div class="flex-grow-1">
+                            <div class="input-group">
+                                <textarea class="form-control" id="message-input" rows="2" placeholder="Type your message here..." maxlength="1000"></textarea>
+                                <button class="btn btn-primary" type="submit" id="send-btn">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <small class="text-muted">
+                            <span id="char-count">0</span>/1000 characters
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" type="button" title="Attach file">
+                                <i class="bi bi-paperclip"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" title="Voice message">
+                                <i class="bi bi-mic"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Chat styling */
+.chat-messages {
+    background-color: #f8f9fa;
+}
+
+.message {
+    max-width: 80%;
+}
+
+.user-message {
+    margin-left: auto;
+}
+
+.bot-message {
+    margin-right: auto;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.bot-avatar {
+    background-color: var(--medium-green);
+}
+
+.user-avatar {
+    background-color: var(--dark-green);
+}
+
+.message-content {
+    background-color: white;
+    padding: 12px 16px;
+    border-radius: 18px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.user-message .message-content {
+    background-color: var(--lightest-green);
+    border: 1px solid var(--lighter-green);
+}
+
+.message-header {
+    margin-bottom: 4px;
+    font-size: 0.9rem;
+}
+
+.message-text {
+    line-height: 1.4;
+}
+
+/* List group styling */
+.list-group-item {
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: var(--lightest-green);
+}
+
+.list-group-item.active {
+    background-color: var(--medium-green);
+    border-color: var(--medium-green);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .col-md-3 {
+        margin-bottom: 1rem;
+    }
+    
+    .message {
+        max-width: 95%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messageInput = document.getElementById('message-input');
+    const chatForm = document.getElementById('chat-form');
+    const chatMessages = document.getElementById('chat-messages');
+    const charCount = document.getElementById('char-count');
+    const sendBtn = document.getElementById('send-btn');
+    const clearChatBtn = document.getElementById('clear-chat-btn');
+    const newChatBtn = document.getElementById('new-chat-btn');
+    const chatSessions = document.querySelectorAll('#chat-sessions .list-group-item');
+
+    // Character counter
+    messageInput.addEventListener('input', function() {
+        const count = this.value.length;
+        charCount.textContent = count;
+        
+        if (count > 900) {
+            charCount.style.color = '#dc3545';
+        } else if (count > 800) {
+            charCount.style.color = '#ffc107';
+        } else {
+            charCount.style.color = '#6c757d';
+        }
+    });
+
+    // Handle form submission
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        
+        if (message) {
+            addUserMessage(message);
+            messageInput.value = '';
+            charCount.textContent = '0';
+            charCount.style.color = '#6c757d';
+            
+            // Simulate bot response
+            setTimeout(() => {
+                addBotMessage(getBotResponse(message));
+            }, 1000);
+        }
+    });
+
+    // Add user message
+    function addUserMessage(text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message user-message mb-3';
+        messageDiv.innerHTML = `
+            <div class="d-flex justify-content-end">
+                <div class="flex-grow-1 me-3 text-end">
+                    <div class="message-content">
+                        <div class="message-header">
+                            <small class="text-muted me-2">${getCurrentTime()}</small>
+                            <strong>You</strong>
+                        </div>
+                        <div class="message-text">${escapeHtml(text)}</div>
+                    </div>
+                </div>
+                <div class="flex-shrink-0">
+                    <div class="avatar user-avatar">
+                        <i class="bi bi-person"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Add bot message
+    function addBotMessage(text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message bot-message mb-3';
+        messageDiv.innerHTML = `
+            <div class="d-flex">
+                <div class="flex-shrink-0">
+                    <div class="avatar bot-avatar">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                </div>
+                <div class="flex-grow-1 ms-3">
+                    <div class="message-content">
+                        <div class="message-header">
+                            <strong>ESG Assistant</strong>
+                            <small class="text-muted ms-2">${getCurrentTime()}</small>
+                        </div>
+                        <div class="message-text">${text}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Simple bot response logic
+    function getBotResponse(userMessage) {
+        const message = userMessage.toLowerCase();
+        
+        if (message.includes('esg') || message.includes('environmental') || message.includes('social') || message.includes('governance')) {
+            return "ESG (Environmental, Social, and Governance) factors are increasingly important for businesses. Our platform helps you track and report on these key areas. Would you like to know more about specific ESG metrics or reporting frameworks?";
+        } else if (message.includes('help') || message.includes('support')) {
+            return "I'm here to help! I can assist with ESG compliance, technical issues, billing questions, or general platform guidance. What specific area do you need help with?";
+        } else if (message.includes('billing') || message.includes('payment') || message.includes('subscription')) {
+            return "For billing and subscription questions, you can check your profile page or contact our support team. Is there a specific billing issue you're experiencing?";
+        } else if (message.includes('technical') || message.includes('bug') || message.includes('error')) {
+            return "I can help with technical issues. Could you please describe the problem you're experiencing in detail? This will help me provide more specific assistance.";
+        } else {
+            return "Thank you for your message! I'm here to help with ESG support, technical issues, billing questions, or general guidance. How can I assist you further?";
+        }
+    }
+
+    // Utility functions
+    function getCurrentTime() {
+        return new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Clear chat
+    clearChatBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear the chat history?')) {
+            chatMessages.innerHTML = '';
+            addBotMessage("Chat history cleared. How can I help you today?");
+        }
+    });
+
+    // New chat
+    newChatBtn.addEventListener('click', function() {
+        chatMessages.innerHTML = '';
+        addBotMessage("New chat started! How can I assist you today?");
+    });
+
+    // Chat session switching
+    chatSessions.forEach(session => {
+        session.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Remove active class from all sessions
+            chatSessions.forEach(s => s.classList.remove('active'));
+            
+            // Add active class to clicked session
+            this.classList.add('active');
+            
+            // Update header - target the right column header specifically
+            const sessionName = this.querySelector('h6').textContent;
+            const rightColumnHeader = document.querySelector('.col-md-9 .card-header h5');
+            if (rightColumnHeader) {
+                rightColumnHeader.innerHTML = `<i class="bi bi-robot"></i> ${sessionName}`;
+            }
+            
+            // Clear messages and start new session
+            chatMessages.innerHTML = '';
+            addBotMessage(`Welcome to ${sessionName}! How can I help you today?`);
+        });
+    });
+
+    // Auto-resize textarea
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Enter to send (Shift+Enter for new line)
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+});
+</script>
 {% endblock %} 
