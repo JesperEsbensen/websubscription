@@ -9,33 +9,203 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        :root {
+            --darkest-green: #094F29;
+            --dark-green: #0A6921;
+            --medium-green: #1A8828;
+            --light-green: #429B46;
+            --lighter-green: #64AD62;
+            --lightest-green: #94C58C;
+        }
+        
         .navbar-brand {
             font-weight: bold;
             font-size: 1.5rem;
         }
+        
         .hero-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--dark-green) 0%, var(--medium-green) 100%);
             color: white;
             padding: 4rem 0;
         }
+        
         .feature-card {
             border: none;
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease;
+            background-color: var(--lightest-green);
         }
+        
         .feature-card:hover {
             transform: translateY(-5px);
+            background-color: var(--lighter-green);
         }
+        
         .footer {
-            background-color: #343a40;
+            background-color: var(--darkest-green);
             color: white;
             padding: 2rem 0;
             margin-top: auto;
         }
+        
         .main-content {
             min-height: calc(100vh - 200px);
         }
+        
+        /* Custom green navbar */
+        .navbar-dark.bg-dark {
+            background-color: var(--darkest-green) !important;
+        }
+        
+                 /* Green buttons */
+         .btn-outline-light:hover {
+             background-color: var(--light-green);
+             border-color: var(--light-green);
+         }
+         
+         /* Make btn-primary use green colors */
+         .btn-primary {
+             background-color: var(--medium-green);
+             border-color: var(--medium-green);
+         }
+         
+         .btn-primary:hover {
+             background-color: var(--dark-green);
+             border-color: var(--dark-green);
+         }
+         
+         .btn-primary:focus {
+             background-color: var(--dark-green);
+             border-color: var(--dark-green);
+             box-shadow: 0 0 0 0.2rem rgba(26, 136, 40, 0.25);
+         }
+         
+         .btn-primary:active {
+             background-color: var(--darkest-green) !important;
+             border-color: var(--darkest-green) !important;
+         }
+         
+         /* Make btn-success use consistent green colors */
+         .btn-success {
+             background-color: var(--medium-green);
+             border-color: var(--medium-green);
+         }
+         
+         .btn-success:hover {
+             background-color: var(--dark-green);
+             border-color: var(--dark-green);
+         }
+         
+         .btn-success:focus {
+             background-color: var(--dark-green);
+             border-color: var(--dark-green);
+             box-shadow: 0 0 0 0.2rem rgba(26, 136, 40, 0.25);
+         }
+         
+         .btn-success:active {
+             background-color: var(--darkest-green) !important;
+             border-color: var(--darkest-green) !important;
+         }
+        
+        /* Green accent colors for links */
+        .text-muted {
+            color: var(--medium-green) !important;
+        }
+        
+        .text-muted:hover {
+            color: var(--light-green) !important;
+        }
+        
+        /* Green background for cards and dialogs */
+        .card {
+            background-color: white;
+            border-color: var(--lighter-green);
+        }
+        
+        /* Green card headers */
+        .card-header.bg-primary {
+            background-color: var(--medium-green) !important;
+            border-bottom-color: var(--lighter-green);
+        }
+        
+        .card-header {
+            background-color: var(--medium-green);
+            border-bottom-color: var(--lighter-green);
+            color: white;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-color: var(--lighter-green);
+        }
+        
+        .modal-header {
+            background-color: var(--medium-green);
+            border-bottom-color: var(--lighter-green);
+            color: white;
+        }
+        
+        .modal-title {
+            color: white;
+        }
+        
+        /* Green form elements */
+        .form-control {
+            background-color: white;
+            border-color: var(--lighter-green);
+        }
+        
+        .form-control:focus {
+            background-color: white;
+            border-color: var(--light-green);
+            box-shadow: 0 0 0 0.2rem rgba(66, 155, 70, 0.25);
+        }
+        
+        /* Ensure text areas and select elements are also white */
+        textarea.form-control,
+        select.form-control {
+            background-color: white;
+        }
+        
+        /* Green alert boxes */
+        .alert-success {
+            background-color: var(--lightest-green);
+            border-color: var(--lighter-green);
+            color: var(--darkest-green);
+        }
+        
+        /* Green table headers */
+        .table thead th {
+            background-color: var(--light-green);
+            color: white;
+        }
+        
+        /* Green pagination */
+        .page-link {
+            color: var(--dark-green);
+        }
+        
+        .page-link:hover {
+            background-color: var(--light-green);
+            border-color: var(--light-green);
+            color: white;
+        }
+        
+                 .page-item.active .page-link {
+             background-color: var(--dark-green);
+             border-color: var(--dark-green);
+         }
+         
+         /* Make text-primary use green colors */
+         .text-primary {
+             color: var(--medium-green) !important;
+         }
+         
+         /* Green icons and text elements */
+         .bi.text-primary {
+             color: var(--medium-green) !important;
+         }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
