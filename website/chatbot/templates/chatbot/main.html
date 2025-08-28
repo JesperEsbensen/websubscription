@@ -14,34 +14,7 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush" id="chat-sessions">
-                        <a href="#" class="list-group-item list-group-item-action active" data-session="general">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">General Support</h6>
-                                <small>Active</small>
-                            </div>
-                            <p class="mb-1 text-muted small">General questions and support</p>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-session="esg">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">ESG Guidance</h6>
-                                <small>2 min ago</small>
-                            </div>
-                            <p class="mb-1 text-muted small">ESG compliance and best practices</p>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-session="technical">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">Technical Support</h6>
-                                <small>1 hour ago</small>
-                            </div>
-                            <p class="mb-1 text-muted small">Technical issues and troubleshooting</p>
-                        </a>
-                        <a href="#" class="list-group-item list-group-item-action" data-session="billing">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">Billing & Subscriptions</h6>
-                                <small>2 hours ago</small>
-                            </div>
-                            <p class="mb-1 text-muted small">Payment and subscription questions</p>
-                        </a>
+                        <!-- Sessions will be loaded dynamically -->
                     </div>
                 </div>
                 <div class="card-footer">
@@ -56,7 +29,7 @@
         <div class="col-md-9 col-lg-9">
             <div class="card shadow-lg h-100">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
+                    <h5 class="mb-0" id="chat-header">
                         <i class="bi bi-robot"></i> General Support
                     </h5>
                     <div class="d-flex gap-2">
@@ -72,86 +45,7 @@
                 <!-- Chat Messages Area -->
                 <div class="card-body p-0" style="height: 60vh; overflow-y: auto;">
                     <div class="chat-messages p-3" id="chat-messages">
-                        <!-- Welcome Message -->
-                        <div class="message bot-message mb-3">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar bot-avatar">
-                                        <i class="bi bi-robot"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <div class="message-content">
-                                        <div class="message-header">
-                                            <strong>ESG Assistant</strong>
-                                            <small class="text-muted ms-2">Just now</small>
-                                        </div>
-                                        <div class="message-text">
-                                            Hello! I'm your ESG support assistant. I'm here to help you with:
-                                            <ul class="mt-2 mb-0">
-                                                <li>ESG compliance questions</li>
-                                                <li>Technical support</li>
-                                                <li>Billing and subscription help</li>
-                                                <li>General platform guidance</li>
-                                            </ul>
-                                            How can I assist you today?
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Sample User Message -->
-                        <div class="message user-message mb-3">
-                            <div class="d-flex justify-content-end">
-                                <div class="flex-grow-1 me-3 text-end">
-                                    <div class="message-content">
-                                        <div class="message-header">
-                                            <small class="text-muted me-2">Just now</small>
-                                            <strong>You</strong>
-                                        </div>
-                                        <div class="message-text">
-                                            Hi! I have a question about ESG reporting requirements.
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <div class="avatar user-avatar">
-                                        <i class="bi bi-person"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Sample Bot Response -->
-                        <div class="message bot-message mb-3">
-                            <div class="d-flex">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar bot-avatar">
-                                        <i class="bi bi-robot"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <div class="message-content">
-                                        <div class="message-header">
-                                            <strong>ESG Assistant</strong>
-                                            <small class="text-muted ms-2">Just now</small>
-                                        </div>
-                                        <div class="message-text">
-                                            I'd be happy to help you with ESG reporting requirements! ESG reporting typically covers three main areas:
-                                            <br><br>
-                                            <strong>Environmental (E):</strong> Climate change, carbon emissions, energy efficiency, waste management
-                                            <br>
-                                            <strong>Social (S):</strong> Labor practices, human rights, community relations, data privacy
-                                            <br>
-                                            <strong>Governance (G):</strong> Board diversity, executive compensation, business ethics, transparency
-                                            <br><br>
-                                            What specific aspect of ESG reporting would you like to know more about?
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Messages will be loaded dynamically -->
                     </div>
                 </div>
 
@@ -180,6 +74,46 @@
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Type Modal -->
+<div class="modal fade" id="sessionTypeModal" tabindex="-1" aria-labelledby="sessionTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="sessionTypeModalLabel">Select Chat Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <button class="list-group-item list-group-item-action" data-session-type="general">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">General Support</h6>
+                        </div>
+                        <p class="mb-1 text-muted small">General questions and support</p>
+                    </button>
+                    <button class="list-group-item list-group-item-action" data-session-type="esg">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">ESG Guidance</h6>
+                        </div>
+                        <p class="mb-1 text-muted small">ESG compliance and best practices</p>
+                    </button>
+                    <button class="list-group-item list-group-item-action" data-session-type="technical">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Technical Support</h6>
+                        </div>
+                        <p class="mb-1 text-muted small">Technical issues and troubleshooting</p>
+                    </button>
+                    <button class="list-group-item list-group-item-action" data-session-type="billing">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Billing & Subscriptions</h6>
+                        </div>
+                        <p class="mb-1 text-muted small">Payment and subscription questions</p>
+                    </button>
                 </div>
             </div>
         </div>
@@ -261,6 +195,21 @@
     border-color: var(--medium-green);
 }
 
+/* Loading spinner */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .col-md-3 {
@@ -282,7 +231,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const sendBtn = document.getElementById('send-btn');
     const clearChatBtn = document.getElementById('clear-chat-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
-    const chatSessions = document.querySelectorAll('#chat-sessions .list-group-item');
+    const chatSessions = document.getElementById('chat-sessions');
+    const chatHeader = document.getElementById('chat-header');
+    const sessionTypeModal = new bootstrap.Modal(document.getElementById('sessionTypeModal'));
+    
+    let currentSessionId = null;
+    let currentSessionType = 'general';
+
+    // Initialize the chat
+    initializeChat();
 
     // Character counter
     messageInput.addEventListener('input', function() {
@@ -304,49 +261,238 @@ document.addEventListener('DOMContentLoaded', function() {
         const message = messageInput.value.trim();
         
         if (message) {
-            addUserMessage(message);
+            sendMessage(message);
+        }
+    });
+
+    // Initialize chat
+    async function initializeChat() {
+        await loadSessions();
+        if (currentSessionId) {
+            await loadMessages(currentSessionId);
+        }
+    }
+
+    // Load sessions from database
+    async function loadSessions() {
+        try {
+            const response = await fetch('{% url "chatbot:get_sessions" %}');
+            const data = await response.json();
+            
+            chatSessions.innerHTML = '';
+            
+            if (data.sessions.length === 0) {
+                // Create default session if none exist
+                await createSession('general');
+                await loadSessions();
+                return;
+            }
+            
+            data.sessions.forEach(session => {
+                const sessionElement = createSessionElement(session);
+                chatSessions.appendChild(sessionElement);
+                
+                // Set first session as active
+                if (!currentSessionId) {
+                    currentSessionId = session.id;
+                    currentSessionType = session.type;
+                    sessionElement.classList.add('active');
+                    chatHeader.innerHTML = `<i class="bi bi-robot"></i> ${session.title}`;
+                }
+            });
+        } catch (error) {
+            console.error('Error loading sessions:', error);
+        }
+    }
+
+    // Create session element
+    function createSessionElement(session) {
+        const div = document.createElement('div');
+        div.className = 'list-group-item list-group-item-action';
+        div.dataset.sessionId = session.id;
+        div.dataset.sessionType = session.type;
+        
+        div.innerHTML = `
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">${session.title}</h6>
+                <small>${session.last_message_time}</small>
+            </div>
+            <p class="mb-1 text-muted small">${session.message_count} messages</p>
+        `;
+        
+        div.addEventListener('click', () => switchSession(session.id));
+        
+        return div;
+    }
+
+    // Switch to a different session
+    async function switchSession(sessionId) {
+        try {
+            // Update active state
+            document.querySelectorAll('#chat-sessions .list-group-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-session-id="${sessionId}"]`).classList.add('active');
+            
+            // Load messages for this session
+            await loadMessages(sessionId);
+            
+            currentSessionId = sessionId;
+        } catch (error) {
+            console.error('Error switching session:', error);
+        }
+    }
+
+    // Load messages for a session
+    async function loadMessages(sessionId) {
+        try {
+            const response = await fetch(`{% url "chatbot:get_messages" 0 %}`.replace('0', sessionId));
+            const data = await response.json();
+            
+            chatMessages.innerHTML = '';
+            chatHeader.innerHTML = `<i class="bi bi-robot"></i> ${data.session.title}`;
+            currentSessionType = data.session.type;
+            
+            data.messages.forEach(message => {
+                addMessageToChat(message, false);
+            });
+            
+            scrollToBottom();
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
+    }
+
+    // Send message to server
+    async function sendMessage(content) {
+        try {
+            // Add user message immediately
+            const userMessage = {
+                type: 'user',
+                content: content,
+                created_at: getCurrentTime(),
+                is_user: true
+            };
+            addMessageToChat(userMessage, false);
+            
+            // Clear input
             messageInput.value = '';
             charCount.textContent = '0';
             charCount.style.color = '#6c757d';
             
-            // Simulate bot response
-            setTimeout(() => {
-                addBotMessage(getBotResponse(message));
-            }, 1000);
+            // Show typing indicator
+            const typingIndicator = addTypingIndicator();
+            
+            // Send to server
+            const response = await fetch('{% url "chatbot:send_message" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    session_id: currentSessionId,
+                    message: content
+                })
+            });
+            
+            const data = await response.json();
+            
+            // Remove typing indicator
+            typingIndicator.remove();
+            
+            if (data.success) {
+                // Add bot response
+                const botMessage = {
+                    type: 'bot',
+                    content: data.bot_message.content,
+                    created_at: data.bot_message.created_at,
+                    is_user: false
+                };
+                addMessageToChat(botMessage, false);
+                
+                // Update current session ID if it changed
+                if (data.session_id !== currentSessionId) {
+                    currentSessionId = data.session_id;
+                    await loadSessions();
+                }
+            } else {
+                addErrorMessage('Failed to send message. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            addErrorMessage('Network error. Please check your connection.');
         }
-    });
+    }
 
-    // Add user message
-    function addUserMessage(text) {
+    // Add message to chat
+    function addMessageToChat(message, animate = true) {
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'message user-message mb-3';
-        messageDiv.innerHTML = `
-            <div class="d-flex justify-content-end">
-                <div class="flex-grow-1 me-3 text-end">
-                    <div class="message-content">
-                        <div class="message-header">
-                            <small class="text-muted me-2">${getCurrentTime()}</small>
-                            <strong>You</strong>
+        messageDiv.className = `message ${message.is_user ? 'user-message' : 'bot-message'} mb-3`;
+        
+        if (animate) {
+            messageDiv.style.opacity = '0';
+            messageDiv.style.transform = 'translateY(20px)';
+        }
+        
+        if (message.is_user) {
+            messageDiv.innerHTML = `
+                <div class="d-flex justify-content-end">
+                    <div class="flex-grow-1 me-3 text-end">
+                        <div class="message-content">
+                            <div class="message-header">
+                                <small class="text-muted me-2">${message.created_at}</small>
+                                <strong>You</strong>
+                            </div>
+                            <div class="message-text">${escapeHtml(message.content)}</div>
                         </div>
-                        <div class="message-text">${escapeHtml(text)}</div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="avatar user-avatar">
+                            <i class="bi bi-person"></i>
+                        </div>
                     </div>
                 </div>
-                <div class="flex-shrink-0">
-                    <div class="avatar user-avatar">
-                        <i class="bi bi-person"></i>
+            `;
+        } else {
+            messageDiv.innerHTML = `
+                <div class="d-flex">
+                    <div class="flex-shrink-0">
+                        <div class="avatar bot-avatar">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="message-content">
+                            <div class="message-header">
+                                <strong>ESG Assistant</strong>
+                                <small class="text-muted ms-2">${message.created_at}</small>
+                            </div>
+                            <div class="message-text">${message.content}</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
+        
         chatMessages.appendChild(messageDiv);
+        
+        if (animate) {
+            setTimeout(() => {
+                messageDiv.style.transition = 'all 0.3s ease';
+                messageDiv.style.opacity = '1';
+                messageDiv.style.transform = 'translateY(0)';
+            }, 100);
+        }
+        
         scrollToBottom();
     }
 
-    // Add bot message
-    function addBotMessage(text) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot-message mb-3';
-        messageDiv.innerHTML = `
+    // Add typing indicator
+    function addTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot-message mb-3 typing-indicator';
+        typingDiv.innerHTML = `
             <div class="d-flex">
                 <div class="flex-shrink-0">
                     <div class="avatar bot-avatar">
@@ -355,35 +501,87 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="flex-grow-1 ms-3">
                     <div class="message-content">
-                        <div class="message-header">
-                            <strong>ESG Assistant</strong>
-                            <small class="text-muted ms-2">${getCurrentTime()}</small>
-                        </div>
-                        <div class="message-text">${text}</div>
+                        <div class="loading"></div>
+                        <small class="text-muted">ESG Assistant is typing...</small>
                     </div>
                 </div>
             </div>
         `;
-        chatMessages.appendChild(messageDiv);
+        chatMessages.appendChild(typingDiv);
+        scrollToBottom();
+        return typingDiv;
+    }
+
+    // Add error message
+    function addErrorMessage(text) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger mt-2';
+        errorDiv.textContent = text;
+        chatMessages.appendChild(errorDiv);
         scrollToBottom();
     }
 
-    // Simple bot response logic
-    function getBotResponse(userMessage) {
-        const message = userMessage.toLowerCase();
-        
-        if (message.includes('esg') || message.includes('environmental') || message.includes('social') || message.includes('governance')) {
-            return "ESG (Environmental, Social, and Governance) factors are increasingly important for businesses. Our platform helps you track and report on these key areas. Would you like to know more about specific ESG metrics or reporting frameworks?";
-        } else if (message.includes('help') || message.includes('support')) {
-            return "I'm here to help! I can assist with ESG compliance, technical issues, billing questions, or general platform guidance. What specific area do you need help with?";
-        } else if (message.includes('billing') || message.includes('payment') || message.includes('subscription')) {
-            return "For billing and subscription questions, you can check your profile page or contact our support team. Is there a specific billing issue you're experiencing?";
-        } else if (message.includes('technical') || message.includes('bug') || message.includes('error')) {
-            return "I can help with technical issues. Could you please describe the problem you're experiencing in detail? This will help me provide more specific assistance.";
-        } else {
-            return "Thank you for your message! I'm here to help with ESG support, technical issues, billing questions, or general guidance. How can I assist you further?";
+    // Create new session
+    async function createSession(sessionType) {
+        try {
+            const response = await fetch('{% url "chatbot:create_session" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    session_type: sessionType,
+                    title: ''
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                currentSessionId = data.session.id;
+                currentSessionType = data.session.type;
+                await loadSessions();
+                await loadMessages(currentSessionId);
+            }
+        } catch (error) {
+            console.error('Error creating session:', error);
         }
     }
+
+    // Clear chat
+    clearChatBtn.addEventListener('click', async function() {
+        if (confirm('Are you sure you want to clear the chat history?')) {
+            try {
+                const response = await fetch(`{% url "chatbot:clear_session" 0 %}`.replace('0', currentSessionId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                });
+                
+                if (response.ok) {
+                    await loadMessages(currentSessionId);
+                }
+            } catch (error) {
+                console.error('Error clearing chat:', error);
+            }
+        }
+    });
+
+    // New chat
+    newChatBtn.addEventListener('click', function() {
+        sessionTypeModal.show();
+    });
+
+    // Session type selection
+    document.querySelectorAll('[data-session-type]').forEach(button => {
+        button.addEventListener('click', function() {
+            const sessionType = this.dataset.sessionType;
+            sessionTypeModal.hide();
+            createSession(sessionType);
+        });
+    });
 
     // Utility functions
     function getCurrentTime() {
@@ -400,43 +598,9 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Clear chat
-    clearChatBtn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to clear the chat history?')) {
-            chatMessages.innerHTML = '';
-            addBotMessage("Chat history cleared. How can I help you today?");
-        }
-    });
-
-    // New chat
-    newChatBtn.addEventListener('click', function() {
-        chatMessages.innerHTML = '';
-        addBotMessage("New chat started! How can I assist you today?");
-    });
-
-    // Chat session switching
-    chatSessions.forEach(session => {
-        session.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Remove active class from all sessions
-            chatSessions.forEach(s => s.classList.remove('active'));
-            
-            // Add active class to clicked session
-            this.classList.add('active');
-            
-            // Update header - target the right column header specifically
-            const sessionName = this.querySelector('h6').textContent;
-            const rightColumnHeader = document.querySelector('.col-md-9 .card-header h5');
-            if (rightColumnHeader) {
-                rightColumnHeader.innerHTML = `<i class="bi bi-robot"></i> ${sessionName}`;
-            }
-            
-            // Clear messages and start new session
-            chatMessages.innerHTML = '';
-            addBotMessage(`Welcome to ${sessionName}! How can I help you today?`);
-        });
-    });
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
 
     // Auto-resize textarea
     messageInput.addEventListener('input', function() {
@@ -453,4 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
 {% endblock %} 
