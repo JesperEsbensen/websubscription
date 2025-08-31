@@ -4,6 +4,25 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
 import logging
+import os
+
+# Import configuration
+try:
+    from .config import (
+        OPENAI_API_KEY, OPENAI_MODEL, OPENAI_EMBEDDING_MODEL,
+        DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
+    )
+    print(f"✅ DEBUG: Successfully imported config values:")
+    print(f"   - OPENAI_MODEL: {OPENAI_MODEL}")
+    print(f"   - OPENAI_EMBEDDING_MODEL: {OPENAI_EMBEDDING_MODEL}")
+except ImportError as e:
+    # Fallback values if config is not available
+    print(f"⚠️ DEBUG: Failed to import config, using fallback values: {e}")
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+    OPENAI_MODEL = 'gpt-3.5-turbo'
+    OPENAI_EMBEDDING_MODEL = 'text-embedding-ada-002'
+    DEFAULT_TEMPERATURE = 0.7
+    DEFAULT_MAX_TOKENS = 1000
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +59,11 @@ class OpenAIProvider(LLMProvider):
     
     def __init__(
         self,
-        api_key: str,
-        llm_model: str = "gpt-3.5-turbo",
-        embedding_model: str = "text-embedding-ada-002",
-        temperature: float = 0.7,
-        max_tokens: int = 1000
+        api_key: str = None,
+        llm_model: str = None,
+        embedding_model: str = None,
+        temperature: float = None,
+        max_tokens: int = None
     ):
         """Initialize OpenAI provider."""
         try:
@@ -53,23 +72,64 @@ class OpenAIProvider(LLMProvider):
         except ImportError:
             raise ImportError("OpenAI provider requires langchain-openai to be installed")
         
-        self.api_key = api_key
-        self.llm_model = llm_model
-        self.embedding_model = embedding_model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
+        # Debug: Print configuration values
+        print(f"🔧 DEBUG: OpenAIProvider configuration:")
+        print(f"   - Provided api_key: {'***' + api_key[-4:] if api_key else 'None'}")
+        print(f"   - Config OPENAI_API_KEY: {'***' + OPENAI_API_KEY[-4:] if OPENAI_API_KEY else 'None'}")
+        print(f"   - Provided llm_model: {llm_model}")
+        print(f"   - Config OPENAI_MODEL: {OPENAI_MODEL}")
+        print(f"   - Provided embedding_model: {embedding_model}")
+        print(f"   - Config OPENAI_EMBEDDING_MODEL: {OPENAI_EMBEDDING_MODEL}")
+        print(f"   - Provided temperature: {temperature}")
+        print(f"   - Config DEFAULT_TEMPERATURE: {DEFAULT_TEMPERATURE}")
+        print(f"   - Provided max_tokens: {max_tokens}")
+        print(f"   - Config DEFAULT_MAX_TOKENS: {DEFAULT_MAX_TOKENS}")
+        
+        # Use provided values or fall back to config defaults
+        self.api_key = api_key or OPENAI_API_KEY
+        self.llm_model = llm_model or OPENAI_MODEL
+        self.embedding_model = embedding_model or OPENAI_EMBEDDING_MODEL
+        self.temperature = temperature if temperature is not None else DEFAULT_TEMPERATURE
+        self.max_tokens = max_tokens if max_tokens is not None else DEFAULT_MAX_TOKENS
+        
+        # Ensure embedding_model is never None
+        if not self.embedding_model:
+            self.embedding_model = "text-embedding-ada-002"
+            print(f"⚠️ DEBUG: embedding_model was None, using default: {self.embedding_model}")
+        
+        # Debug: Print final values
+        print(f"🔧 DEBUG: Final OpenAIProvider values:")
+        print(f"   - Final api_key: {'***' + self.api_key[-4:] if self.api_key else 'None'}")
+        print(f"   - Final llm_model: {self.llm_model}")
+        print(f"   - Final embedding_model: {self.embedding_model}")
+        print(f"   - Final temperature: {self.temperature}")
+        print(f"   - Final max_tokens: {self.max_tokens}")
+        
+        # Validate API key
+        if not self.api_key:
+            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable or pass api_key parameter.")
         
         # Initialize components
+        print(f"🔧 DEBUG: Initializing ChatOpenAI with:")
+        print(f"   - api_key: {'***' + self.api_key[-4:] if self.api_key else 'None'}")
+        print(f"   - model: {self.llm_model}")
+        print(f"   - temperature: {self.temperature}")
+        print(f"   - max_tokens: {self.max_tokens}")
+        
         self.llm = ChatOpenAI(
-            openai_api_key=api_key,
-            model=llm_model,
-            temperature=temperature,
-            max_tokens=max_tokens
+            openai_api_key=self.api_key,
+            model=self.llm_model,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens
         )
         
+        print(f"🔧 DEBUG: Initializing OpenAIEmbeddings with:")
+        print(f"   - api_key: {'***' + self.api_key[-4:] if self.api_key else 'None'}")
+        print(f"   - model: {self.embedding_model}")
+        
         self.embeddings = OpenAIEmbeddings(
-            openai_api_key=api_key,
-            model=embedding_model
+            openai_api_key=self.api_key,
+            model=self.embedding_model
         )
         
         self._usage_stats = {
@@ -87,13 +147,13 @@ class OpenAIProvider(LLMProvider):
             from langchain_community.callbacks.manager import get_openai_callback
             
             with get_openai_callback() as cb:
-                response = self.llm.predict(prompt, **kwargs)
+                response = self.llm.invoke(prompt, **kwargs)
                 
                 # Update usage stats
                 self._usage_stats["total_tokens"] += cb.total_tokens
                 self._usage_stats["prompt_tokens"] += cb.prompt_tokens
                 self._usage_stats["completion_tokens"] += cb.completion_tokens
-                self._usage_stats["total_cost"] += cb.total_cost
+                self._usage_stats["total_cost"] += float(cb.total_cost)
                 
                 logger.info(f"OpenAI response generated. Tokens: {cb.total_tokens}, Cost: ${cb.total_cost:.4f}")
                 return response
@@ -132,7 +192,10 @@ class OpenAIProvider(LLMProvider):
     
     def get_usage_stats(self) -> Dict[str, Any]:
         """Get OpenAI usage statistics."""
-        return self._usage_stats.copy()
+        stats = self._usage_stats.copy()
+        # Ensure all values are JSON serializable
+        stats["total_cost"] = float(stats["total_cost"])
+        return stats
 
 class HuggingFaceProvider(LLMProvider):
     """HuggingFace LLM provider implementation."""
@@ -192,7 +255,7 @@ class HuggingFaceProvider(LLMProvider):
     def generate_response(self, prompt: str, **kwargs) -> str:
         """Generate response using HuggingFace."""
         try:
-            response = self.llm.predict(prompt, **kwargs)
+            response = self.llm.invoke(prompt, **kwargs)
             self._usage_stats["generations"] += 1
             return response
         except Exception as e:
@@ -276,7 +339,7 @@ class AnthropicProvider(LLMProvider):
     def generate_response(self, prompt: str, **kwargs) -> str:
         """Generate response using Anthropic Claude."""
         try:
-            response = self.llm.predict(prompt, **kwargs)
+            response = self.llm.invoke(prompt, **kwargs)
             self._usage_stats["generations"] += 1
             return response
         except Exception as e:
@@ -349,7 +412,7 @@ class LocalProvider(LLMProvider):
     def generate_response(self, prompt: str, **kwargs) -> str:
         """Generate response using local LLM."""
         try:
-            response = self.llm.predict(prompt, **kwargs)
+            response = self.llm.invoke(prompt, **kwargs)
             self._usage_stats["generations"] += 1
             return response
         except Exception as e:
@@ -407,6 +470,9 @@ def create_llm_provider(
     provider_type = provider_type.lower()
     
     if provider_type == "openai":
+        # For OpenAI, if no api_key is provided, use the one from config
+        if 'api_key' not in kwargs:
+            kwargs['api_key'] = OPENAI_API_KEY
         return OpenAIProvider(**kwargs)
     elif provider_type == "huggingface":
         return HuggingFaceProvider(**kwargs)

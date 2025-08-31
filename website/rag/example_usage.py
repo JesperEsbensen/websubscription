@@ -2,7 +2,7 @@
 # This file demonstrates how to use the RAG system with different LLM providers
 import os
 from rag import create_rag_system, RAGSystem
-from llm_providers import create_llm_provider
+from .llm_providers import create_llm_provider
 
 def example_openai_rag():
     """Example using OpenAI provider."""
@@ -11,7 +11,7 @@ def example_openai_rag():
     # Configuration
     config = {
         "api_key": os.getenv("OPENAI_API_KEY", "openai-api-key"),
-        "llm_model": "gpt-5-mini-turbo",
+        "llm_model": "gpt-5-mini",
         "embedding_model": "text-embedding-ada-002",
         "temperature": 0.7,
         "max_tokens": 1000
@@ -34,6 +34,8 @@ def example_openai_rag():
         print(f"Answer: {result['answer']}")
         print(f"Provider: {result['provider_info']['provider']}")
         print(f"Usage Stats: {result['usage_stats']}")
+        print(f"Processing Info: {result['processing_info']}")
+        print(f"Intermediate Data: {result['intermediate_data']}")
         
     except Exception as e:
         print(f"Error with OpenAI RAG: {e}")
@@ -145,7 +147,7 @@ def example_manual_provider_setup():
     
     try:
         # Create provider manually
-        from llm_providers import OpenAIProvider
+        from .llm_providers import OpenAIProvider
         
         provider = OpenAIProvider(
             api_key=os.getenv("OPENAI_API_KEY", "your-openai-api-key"),
@@ -227,11 +229,11 @@ def main():
     
     # Run examples
     example_openai_rag()
-    example_huggingface_rag()
-    example_local_rag()
-    example_anthropic_rag()
-    example_manual_provider_setup()
-    example_provider_switching()
+    # example_huggingface_rag()
+    # example_local_rag()
+    # example_anthropic_rag()
+    # example_manual_provider_setup()
+    # example_provider_switching()
 
 if __name__ == "__main__":
     main()

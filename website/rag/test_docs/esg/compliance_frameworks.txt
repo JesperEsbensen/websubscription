@@ -1,0 +1,54 @@
+ESG Compliance Frameworks and Standards
+
+Major ESG Reporting Frameworks:
+
+1. Global Reporting Initiative (GRI):
+   - Most widely used sustainability reporting framework
+   - Provides comprehensive guidelines for ESG reporting
+   - Covers economic, environmental, and social impacts
+   - Includes sector-specific standards
+   - Used by over 10,000 organizations worldwide
+
+2. Sustainability Accounting Standards Board (SASB):
+   - Industry-specific ESG standards
+   - Focuses on financially material sustainability information
+   - 77 industry-specific standards
+   - Designed for SEC filings and financial reporting
+   - Merged with ISSB in 2022
+
+3. Task Force on Climate-related Financial Disclosures (TCFD):
+   - Focuses on climate-related financial risks
+   - Four pillars: Governance, Strategy, Risk Management, Metrics & Targets
+   - Widely adopted by financial institutions
+   - Mandatory in some jurisdictions
+
+4. Carbon Disclosure Project (CDP):
+   - Global environmental disclosure system
+   - Focuses on climate change, water security, and forests
+   - Used by investors and companies
+   - Annual reporting cycle
+
+5. International Sustainability Standards Board (ISSB):
+   - New global sustainability standards
+   - IFRS S1 (General Requirements) and IFRS S2 (Climate)
+   - Designed for global capital markets
+   - Builds on existing frameworks
+
+Compliance Requirements:
+- Many jurisdictions now require ESG reporting
+- Financial institutions increasingly demand ESG data
+- Investors use ESG information for decision-making
+- Regulatory requirements vary by region and industry
+
+Best Practices:
+- Start with materiality assessment
+- Align with multiple frameworks
+- Ensure data quality and accuracy
+- Regular stakeholder engagement
+- Continuous improvement process
+
+Our platform supports all major frameworks and helps organizations:
+- Collect relevant data
+- Generate compliant reports
+- Track progress over time
+- Identify improvement opportunities

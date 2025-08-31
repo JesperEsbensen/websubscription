@@ -8,6 +8,12 @@ from django.db.models import Q
 import json
 from .models import ChatSession, ChatMessage
 
+# Import RAG system components
+from rag.services import RAGDialogueService
+from rag.models import RAGDialogue
+from rag.config import SESSION_DOCS_MAPPING, DEFAULT_LLM_PROVIDER, DEFAULT_LLM_MODEL, DEFAULT_VECTOR_STORE_TYPE
+import os
+
 @login_required
 def chatbot_main(request):
     """Main chatbot page with sessions and messages"""
@@ -106,8 +112,8 @@ def send_message(request):
             content=message_content
         )
         
-        # Generate bot response
-        bot_response = generate_bot_response(message_content, session.session_type)
+        # Generate bot response using RAG system
+        bot_response = generate_bot_response(message_content, session.session_type, user=request.user)
         
         # Save bot message
         bot_message = ChatMessage.objects.create(
@@ -213,32 +219,118 @@ def delete_session(request, session_id):
     
     return JsonResponse({'success': True})
 
-def generate_bot_response(user_message, session_type):
-    """Generate bot response based on user message and session type"""
+def generate_bot_response(user_message, session_type, user=None):
+    """Generate bot response using RAG system based on user message and session type"""
+    print(f"🔍 DEBUG: Starting RAG response generation")
+    print(f"   - User message: {user_message}")
+    print(f"   - Session type: {session_type}")
+    print(f"   - User: {user.username if user else 'None'}")
+    
+    try:
+        if not user:
+            print(f"❌ DEBUG: No user provided, falling back to basic response")
+            return get_fallback_response(user_message, session_type)
+        
+        print(f"✅ DEBUG: User authenticated, initializing RAG service")
+        
+        # Initialize RAG service
+        rag_service = RAGDialogueService(user)
+        print(f"✅ DEBUG: RAG service initialized successfully")
+        
+        # Map session types to RAG dialogue types
+        dialogue_type_mapping = {
+            'esg': 'esg',
+            'technical': 'general',  # Technical support can use general knowledge
+            'billing': 'general',    # Billing can use general knowledge
+            'general': 'general'
+        }
+        
+        rag_dialogue_type = dialogue_type_mapping.get(session_type, 'general')
+        print(f"📋 DEBUG: Mapped session type '{session_type}' to RAG dialogue type '{rag_dialogue_type}'")
+        
+        # Get or create RAG dialogue for this session type
+        print(f"🔍 DEBUG: Looking for existing dialogues...")
+        existing_dialogues = rag_service.get_user_dialogues(
+            status='active', 
+            dialogue_type=rag_dialogue_type
+        )
+        print(f"📊 DEBUG: Found {len(existing_dialogues)} existing dialogues")
+        
+        if existing_dialogues:
+            dialogue = existing_dialogues[0]  # Use the most recent active dialogue
+            print(f"✅ DEBUG: Using existing dialogue: {dialogue.title} (ID: {dialogue.id})")
+        else:
+            print(f"🆕 DEBUG: No existing dialogue found, creating new one...")
+            # Create new dialogue
+            dialogue_title = f"{session_type.title()} Support Session"
+            dialogue = rag_service.create_dialogue(
+                title=dialogue_title,
+                dialogue_type=rag_dialogue_type,
+                llm_provider=DEFAULT_LLM_PROVIDER,
+                llm_model=DEFAULT_LLM_MODEL,
+                vector_store_type=DEFAULT_VECTOR_STORE_TYPE
+            )
+            print(f"✅ DEBUG: Created new dialogue: {dialogue.title} (ID: {dialogue.id})")
+        
+        # Process the query through RAG system
+        print(f"🔍 DEBUG: Getting documents path for session type '{session_type}'")
+        documents_path = get_documents_path_for_session_type(session_type)
+        print(f"📁 DEBUG: Documents path: {documents_path}")
+        print(f"📁 DEBUG: Path exists: {os.path.exists(documents_path) if documents_path else 'None'}")
+        
+        print(f"🤖 DEBUG: Processing query through RAG system...")
+        result = rag_service.process_query(
+            dialogue=dialogue,
+            user_query=user_message,
+            documents_path=documents_path,
+            include_intermediate=False  # Don't include intermediate data for chatbot responses
+        )
+        
+        print(f"📊 DEBUG: RAG result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
+        
+        if 'error' in result:
+            print(f"❌ DEBUG: RAG returned error: {result['error']}")
+            print(f"🔄 DEBUG: Falling back to basic response due to RAG error")
+            return get_fallback_response(user_message, session_type)
+        
+        answer = result.get('answer')
+        if answer:
+            print(f"✅ DEBUG: RAG generated answer: {answer[:100]}...")
+            return answer
+        else:
+            print(f"⚠️ DEBUG: RAG result has no 'answer' key, falling back")
+            return get_fallback_response(user_message, session_type)
+        
+    except Exception as e:
+        # Log the error and fall back to basic response
+        print(f"❌ DEBUG: Exception in RAG system: {str(e)}")
+        print(f"📋 DEBUG: Exception type: {type(e).__name__}")
+        import traceback
+        print(f"📋 DEBUG: Full traceback:")
+        traceback.print_exc()
+        print(f"🔄 DEBUG: Falling back to basic response due to exception")
+        return get_fallback_response(user_message, session_type)
+
+def get_fallback_response(user_message, session_type):
+    """Fallback response when RAG system is unavailable"""
     message = user_message.lower()
     
-    # Session-specific responses
+    # Session-specific fallback responses
     if session_type == 'esg':
         if any(word in message for word in ['esg', 'environmental', 'social', 'governance']):
             return "ESG (Environmental, Social, and Governance) factors are crucial for modern businesses. Our platform provides comprehensive ESG tracking and reporting tools. Would you like to know more about specific ESG metrics, reporting frameworks, or compliance requirements?"
-        elif any(word in message for word in ['compliance', 'reporting', 'framework']):
-            return "ESG reporting frameworks include GRI, SASB, TCFD, and CDP. Our platform helps you align with these standards and generate compliant reports. Which framework are you interested in?"
         else:
             return "I'm here to help with ESG guidance! I can assist with compliance questions, reporting frameworks, best practices, and ESG strategy development. What specific ESG topic would you like to discuss?"
     
     elif session_type == 'technical':
         if any(word in message for word in ['error', 'bug', 'issue', 'problem']):
             return "I can help you troubleshoot technical issues. Could you please provide more details about the problem you're experiencing? Include any error messages, steps to reproduce, and your browser/device information."
-        elif any(word in message for word in ['login', 'password', 'account']):
-            return "For account-related issues, you can reset your password or contact our support team. Are you having trouble logging in or accessing your account?"
         else:
             return "I'm here to help with technical support! Please describe the issue you're experiencing, and I'll guide you through the solution."
     
     elif session_type == 'billing':
         if any(word in message for word in ['payment', 'billing', 'subscription', 'charge']):
             return "For billing and subscription questions, you can check your payment history in your profile, update payment methods, or contact our billing support team. What specific billing issue are you experiencing?"
-        elif any(word in message for word in ['cancel', 'refund']):
-            return "You can manage your subscription in your profile settings. For cancellations or refunds, please contact our support team with your account details."
         else:
             return "I can help with billing and subscription questions! This includes payment issues, subscription management, invoices, and account billing. What do you need assistance with?"
     
@@ -247,12 +339,18 @@ def generate_bot_response(user_message, session_type):
             return "ESG (Environmental, Social, and Governance) factors are increasingly important for businesses. Our platform helps you track and report on these key areas. Would you like to know more about specific ESG metrics or reporting frameworks?"
         elif any(word in message for word in ['help', 'support']):
             return "I'm here to help! I can assist with ESG compliance, technical issues, billing questions, or general platform guidance. What specific area do you need help with?"
-        elif any(word in message for word in ['billing', 'payment', 'subscription']):
-            return "For billing and subscription questions, you can check your profile page or contact our support team. Is there a specific billing issue you're experiencing?"
-        elif any(word in message for word in ['technical', 'bug', 'error']):
-            return "I can help with technical issues. Could you please describe the problem you're experiencing in detail? This will help me provide more specific assistance."
         else:
             return "Thank you for your message! I'm here to help with ESG support, technical issues, billing questions, or general guidance. How can I assist you further?"
+
+def get_documents_path_for_session_type(session_type):
+    """Get the appropriate documents path for the session type"""
+    docs_path = SESSION_DOCS_MAPPING.get(session_type, SESSION_DOCS_MAPPING['general'])
+    
+    # Check if the path exists, otherwise use general path
+    if os.path.exists(docs_path):
+        return docs_path
+    else:
+        return SESSION_DOCS_MAPPING['general']
 
 def get_welcome_message(session_type):
     """Get welcome message based on session type"""

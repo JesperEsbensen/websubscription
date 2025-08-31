@@ -7,7 +7,7 @@ This creates a mock LLM provider for testing purposes.
 import os
 import logging
 from typing import List, Dict, Any
-from llm_providers import LLMProvider
+from .llm_providers import LLMProvider
 from rag import RAGSystem
 
 # Configure logging
@@ -125,14 +125,41 @@ def test_rag_system():
         
         for question in test_questions:
             print(f"\n❓ Question: {question}")
-            result = rag.query(question)
+            result = rag.query(question, include_intermediate=True)
             
             if "error" in result:
                 print(f"❌ Error: {result['error']}")
             else:
-                print(f"✅ Answer: {result['answer']}")
+                print(f"✅ Answer: {result['answer'][:100]}...")
                 print(f"📊 Provider: {result['provider_info']['provider']}")
                 print(f"📈 Usage: {result['usage_stats']}")
+                
+                # Display intermediate information
+                if "processing_info" in result:
+                    processing = result["processing_info"]
+                    print(f"⏱️  Total Time: {processing['total_duration']:.3f}s")
+                    
+                    for step in processing["steps"]:
+                        step_name = step["step"].replace("_", " ").title()
+                        duration = step["duration"]
+                        print(f"  📋 {step_name}: {duration:.3f}s")
+                        
+                        if step["step"] == "document_retrieval":
+                            print(f"    📄 Documents found: {step['documents_found']}")
+                            if step["documents"]:
+                                print(f"    🎯 Top document: {step['documents'][0]['content'][:100]}...")
+                        
+                        elif step["step"] == "context_preparation":
+                            print(f"    📝 Context length: {step['context_length']} characters")
+                            print(f"    📄 Context preview: {step['context_preview'][:100]}...")
+                        
+                        elif step["step"] == "llm_processing":
+                            print(f"    🤖 LLM Provider: {step['provider']}")
+                
+                # Display retrieval scores if available
+                if "intermediate_data" in result and result["intermediate_data"]["retrieval_scores"]:
+                    scores = result["intermediate_data"]["retrieval_scores"]
+                    print(f"🎯 Retrieval scores: {[f'{s:.3f}' if s is not None else 'N/A' for s in scores]}")
         
         # Test similarity search
         print("\n🔍 Testing Similarity Search:")
@@ -153,6 +180,17 @@ def test_rag_system():
         print(f"✅ Provider: {info['provider_info']['provider']}")
         print(f"✅ Chunk Size: {info['chunk_size']}")
         print(f"✅ Chunk Overlap: {info['chunk_overlap']}")
+        
+        # Test system status
+        print("\n🔧 System Status:")
+        print("-" * 30)
+        
+        status = rag.get_system_status()
+        print(f"✅ RAG System Initialized: {status['system_info']['rag_system_initialized']}")
+        print(f"✅ Vector Store Initialized: {status['system_info']['vector_store_initialized']}")
+        print(f"✅ Retriever Initialized: {status['system_info']['retriever_initialized']}")
+        print(f"✅ Memory Initialized: {status['system_info']['memory_initialized']}")
+        print(f"✅ Memory History Length: {status['vector_store_info']['memory_info']['chat_history_length']}")
         
         print("\n🎉 All tests completed successfully!")
         

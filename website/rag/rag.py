@@ -30,12 +30,27 @@ from langchain.evaluation import load_evaluator
 from langchain.schema.runnable import Runnable
 
 # Import our neutral LLM provider interface
-from llm_providers import LLMProvider, create_llm_provider
+from .llm_providers import LLMProvider, create_llm_provider
+
+# Import configuration
+try:
+    from .config import (
+        DEFAULT_VECTOR_STORE, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP,
+        DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
+    )
+except ImportError:
+    # Fallback values if config is not available
+    DEFAULT_VECTOR_STORE = "chroma"
+    DEFAULT_CHUNK_SIZE = 1000
+    DEFAULT_CHUNK_OVERLAP = 200
+    DEFAULT_TEMPERATURE = 0.7
+    DEFAULT_MAX_TOKENS = 1000
 
 # For document processing
 import os
 import json
 import logging
+import time
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
@@ -46,6 +61,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Suppress verbose LangChain logging
+logging.getLogger("langchain").setLevel(logging.WARNING)
+logging.getLogger("langchain_community").setLevel(logging.WARNING)
+logging.getLogger("langchain_openai").setLevel(logging.WARNING)
 
 class RAGSystem:
     """
@@ -64,11 +84,11 @@ class RAGSystem:
     def __init__(
         self,
         llm_provider: LLMProvider,
-        vector_store_type: str = "chroma",
-        chunk_size: int = 1000,
-        chunk_overlap: int = 200,
-        temperature: float = 0.7,
-        max_tokens: int = 1000
+        vector_store_type: str = None,
+        chunk_size: int = None,
+        chunk_overlap: int = None,
+        temperature: float = None,
+        max_tokens: int = None
     ):
         """
         Initialize the RAG system.
@@ -81,20 +101,27 @@ class RAGSystem:
             temperature: LLM temperature for response generation
             max_tokens: Maximum tokens for LLM responses
         """
+        print(f"🔧 DEBUG: Initializing RAG system with LLM provider: {llm_provider.get_model_info()['provider']}")
         self.llm_provider = llm_provider
-        self.vector_store_type = vector_store_type
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
-        self.temperature = temperature
-        self.max_tokens = max_tokens
+        self.vector_store_type = vector_store_type or DEFAULT_VECTOR_STORE
+        self.chunk_size = chunk_size if chunk_size is not None else DEFAULT_CHUNK_SIZE
+        self.chunk_overlap = chunk_overlap if chunk_overlap is not None else DEFAULT_CHUNK_OVERLAP
+        self.temperature = temperature if temperature is not None else DEFAULT_TEMPERATURE
+        self.max_tokens = max_tokens if max_tokens is not None else DEFAULT_MAX_TOKENS
+        print(f"🔧 DEBUG: RAG system initialized with chunk size: {self.chunk_size}, chunk overlap: {self.chunk_overlap}, temperature: {self.temperature}, max_tokens: {self.max_tokens}")
         
         # Initialize text splitter
+        print(f"🔧 DEBUG: Creating text splitter with:")
+        print(f"   - chunk_size: {self.chunk_size}")
+        print(f"   - chunk_overlap: {self.chunk_overlap}")
+        
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
+            chunk_size=self.chunk_size,
+            chunk_overlap=self.chunk_overlap,
             length_function=len,
             separators=["\n\n", "\n", " ", ""]
         )
+        print(f"✅ DEBUG: Text splitter initialized successfully")
         
         self.vector_store = None
         self.retriever = None
@@ -102,6 +129,7 @@ class RAGSystem:
         self.memory = ConversationBufferMemory(
             memory_key="chat_history",
             output_key="result",
+            input_key="query",
             return_messages=True
         )
         
@@ -345,13 +373,14 @@ class RAGSystem:
         except Exception as e:
             logger.error(f"Error adding documents: {str(e)}")
     
-    def query(self, question: str, k: int = 5) -> Dict[str, Any]:
+    def query(self, question: str, k: int = 5, include_intermediate: bool = True) -> Dict[str, Any]:
         """
         Query the RAG system with a question.
         
         Args:
             question: The question to ask
             k: Number of relevant documents to retrieve
+            include_intermediate: Whether to include intermediate processing information
             
         Returns:
             Dictionary containing answer and source documents
@@ -361,10 +390,61 @@ class RAGSystem:
             return {"error": "QA chain not initialized"}
         
         try:
-            result = self.qa_chain({"query": question})
+            # Track processing steps
+            processing_info = {
+                "query": question,
+                "timestamp": time.time(),
+                "steps": []
+            }
+            
+            # Step 1: Document retrieval
+            logger.info(f"Retrieving relevant documents for query: {question}")
+            start_time = time.time()
+            relevant_docs = self.similarity_search(question, k=k)
+            retrieval_time = time.time() - start_time
+            
+            processing_info["steps"].append({
+                "step": "document_retrieval",
+                "duration": retrieval_time,
+                "documents_found": len(relevant_docs),
+                                        "documents": [
+                            {
+                                "content": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
+                                "metadata": doc.metadata,
+                                "score": doc.metadata.get('similarity_score', None)
+                            } for doc in relevant_docs
+                        ]
+            })
+            
+            # Step 2: Context preparation
+            start_time = time.time()
+            context_text = self._prepare_context(relevant_docs)
+            context_time = time.time() - start_time
+            
+            processing_info["steps"].append({
+                "step": "context_preparation",
+                "duration": context_time,
+                "context_length": len(context_text),
+                "context_preview": context_text[:500] + "..." if len(context_text) > 500 else context_text
+            })
+            
+            # Step 3: LLM processing
+            start_time = time.time()
+            result = self.qa_chain.invoke({"query": question})
+            llm_time = time.time() - start_time
+            
+            processing_info["steps"].append({
+                "step": "llm_processing",
+                "duration": llm_time,
+                "provider": self.llm_provider.get_model_info()["provider"]
+            })
             
             # Get usage stats from provider
             usage_stats = self.llm_provider.get_usage_stats()
+            
+            # Calculate total processing time
+            total_time = time.time() - processing_info["timestamp"]
+            processing_info["total_duration"] = total_time
             
             response = {
                 "answer": result["result"],
@@ -373,32 +453,60 @@ class RAGSystem:
                 "usage_stats": usage_stats,
                 "provider_info": self.llm_provider.get_model_info()
             }
+            print(f"🔧 DEBUG: Result: {result["result"]}")
             
-            logger.info(f"Query processed using {self.llm_provider.get_model_info()['provider']} provider")
+            # Add intermediate information if requested
+            if include_intermediate:
+                response["processing_info"] = processing_info
+                response["intermediate_data"] = {
+                    "retrieved_documents": relevant_docs,
+                    "context_used": context_text,
+                    "retrieval_scores": [doc.metadata.get('similarity_score', None) for doc in relevant_docs]
+                }
+            
+            logger.info(f"Query processed in {total_time:.2f}s using {self.llm_provider.get_model_info()['provider']} provider")
             return response
                 
         except Exception as e:
             logger.error(f"Error processing query: {str(e)}")
             return {"error": str(e)}
     
-    def similarity_search(self, query: str, k: int = 5) -> List[Document]:
+    def similarity_search(self, query: str, k: int = 5, include_scores: bool = True) -> List[Document]:
         """
         Perform similarity search to find relevant documents.
         
         Args:
             query: Search query
             k: Number of documents to retrieve
+            include_scores: Whether to include similarity scores
             
         Returns:
-            List of relevant documents
+            List of relevant documents with optional scores
         """
         if not self.vector_store:
             logger.error("Vector store not initialized")
             return []
         
         try:
-            docs = self.vector_store.similarity_search(query, k=k)
+            if include_scores:
+                # Get documents with scores
+                docs_and_scores = self.vector_store.similarity_search_with_score(query, k=k)
+                docs = []
+                for doc, score in docs_and_scores:
+                    # Create a copy of the document and add score as metadata
+                    doc_copy = Document(
+                        page_content=doc.page_content,
+                        metadata={**doc.metadata, 'similarity_score': score}
+                    )
+                    docs.append(doc_copy)
+            else:
+                docs = self.vector_store.similarity_search(query, k=k)
+            
             logger.info(f"Retrieved {len(docs)} documents for query: {query}")
+            if include_scores and docs:
+                scores = [doc.metadata.get('similarity_score', None) for doc in docs]
+                logger.info(f"Similarity scores: {scores}")
+            
             return docs
             
         except Exception as e:
@@ -420,7 +528,11 @@ class RAGSystem:
                 "type": self.vector_store_type,
                 "provider_info": self.llm_provider.get_model_info(),
                 "chunk_size": self.chunk_size,
-                "chunk_overlap": self.chunk_overlap
+                "chunk_overlap": self.chunk_overlap,
+                "memory_info": {
+                    "chat_history_length": len(self.memory.chat_memory.messages),
+                    "memory_type": type(self.memory).__name__
+                }
             }
             
             # Get document count if available
@@ -432,6 +544,60 @@ class RAGSystem:
         except Exception as e:
             logger.error(f"Error getting vector store info: {str(e)}")
             return {"error": str(e)}
+    
+    def get_system_status(self) -> Dict[str, Any]:
+        """
+        Get comprehensive system status and statistics.
+        
+        Returns:
+            Dictionary with system status information
+        """
+        try:
+            status = {
+                "system_info": {
+                    "rag_system_initialized": self.qa_chain is not None,
+                    "vector_store_initialized": self.vector_store is not None,
+                    "retriever_initialized": self.retriever is not None,
+                    "memory_initialized": self.memory is not None
+                },
+                "vector_store_info": self.get_vector_store_info(),
+                "provider_stats": self.llm_provider.get_usage_stats(),
+                "configuration": {
+                    "chunk_size": self.chunk_size,
+                    "chunk_overlap": self.chunk_overlap,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_tokens
+                }
+            }
+            
+            return status
+            
+        except Exception as e:
+            logger.error(f"Error getting system status: {str(e)}")
+            return {"error": str(e)}
+    
+    def _prepare_context(self, documents: List[Document]) -> str:
+        """
+        Prepare context from retrieved documents.
+        
+        Args:
+            documents: List of retrieved documents
+            
+        Returns:
+            Formatted context string
+        """
+        if not documents:
+            return ""
+        
+        context_parts = []
+        for i, doc in enumerate(documents, 1):
+            content = doc.page_content.strip()
+            metadata = doc.metadata
+            source = metadata.get('source', 'Unknown')
+            
+            context_parts.append(f"Document {i} (Source: {source}):\n{content}\n")
+        
+        return "\n".join(context_parts)
     
     def clear_memory(self) -> None:
         """Clear the conversation memory."""

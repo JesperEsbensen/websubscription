@@ -1,0 +1,59 @@
+Billing and Subscription Support
+
+Subscription Plans:
+1. Basic Plan: $29/month
+   - Core ESG reporting features
+   - Basic analytics
+   - Email support
+
+2. Professional Plan: $79/month
+   - Advanced ESG reporting
+   - Custom dashboards
+   - Priority support
+   - API access
+
+3. Enterprise Plan: $199/month
+   - Full platform access
+   - Custom integrations
+   - Dedicated support
+   - Advanced analytics
+
+Payment Information:
+- We accept all major credit cards
+- Payments are processed securely
+- Invoices are sent monthly
+- Payment history is available in your account
+
+Billing Policies:
+- Subscriptions are billed monthly
+- You can upgrade or downgrade at any time
+- Cancellations take effect at the end of the billing period
+- Refunds are available within 30 days of purchase
+
+Common Billing Issues:
+1. Payment Declined:
+   - Check card expiration date
+   - Verify billing address
+   - Ensure sufficient funds
+   - Contact your bank if needed
+
+2. Subscription Changes:
+   - Changes take effect immediately
+   - Prorated charges may apply
+   - Downgrades don't affect current month
+
+3. Invoice Requests:
+   - Download from your account dashboard
+   - Contact support for custom invoices
+   - Tax information is included
+
+4. Cancellation:
+   - Cancel anytime from your account
+   - Access continues until period ends
+   - No cancellation fees
+
+For billing support, please provide:
+- Your account email
+- Transaction ID (if applicable)
+- Description of the issue
+- Screenshots if relevant

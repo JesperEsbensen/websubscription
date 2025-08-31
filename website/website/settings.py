@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'accounts',
     'chatbot',
     'guestbook',
+    'rag',
 ]
 
 MIDDLEWARE = [
