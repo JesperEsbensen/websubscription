@@ -130,6 +130,11 @@ dmypy.json
 
 # databases
 /chroma_db
+website/chroma_db/
+
+# Media files (user uploads)
+/media/profile_images/
+website/media/profile_images/
 
 # Secrets
 /secrets
