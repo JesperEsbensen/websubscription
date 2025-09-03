@@ -3,6 +3,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
+from decimal import Decimal
 import logging
 import os
 
@@ -28,6 +29,59 @@ logger = logging.getLogger(__name__)
 
 class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
+    
+    def debug_configuration(self, provider_name: str, **kwargs):
+        """
+        Debug function to print configuration values.
+        To be implemented by subclasses with their specific config values.
+        
+        Args:
+            provider_name: Name of the provider (e.g., 'OpenAI', 'HuggingFace')
+            **kwargs: Configuration key-value pairs to debug
+        """
+        print(f"🔧 DEBUG: {provider_name}Provider configuration:")
+        for key, value in kwargs.items():
+            if 'key' in key.lower() and value:
+                # Mask API keys for security
+                masked_value = '***' + str(value)[-4:] if len(str(value)) > 4 else '***'
+                print(f"   - {key}: {masked_value}")
+            else:
+                print(f"   - {key}: {value}")
+    
+    def debug_final_values(self, provider_name: str, **kwargs):
+        """
+        Debug function to print final values after configuration.
+        
+        Args:
+            provider_name: Name of the provider (e.g., 'OpenAI', 'HuggingFace')
+            **kwargs: Final key-value pairs to debug
+        """
+        print(f"🔧 DEBUG: Final {provider_name}Provider values:")
+        for key, value in kwargs.items():
+            if 'key' in key.lower() and value:
+                # Mask API keys for security
+                masked_value = '***' + str(value)[-4:] if len(str(value)) > 4 else '***'
+                print(f"   - Final {key}: {masked_value}")
+            else:
+                print(f"   - Final {key}: {value}")
+    
+    def debug_initialization(self, provider_name: str, component: str, **kwargs):
+        """
+        Debug function to print initialization parameters.
+        
+        Args:
+            provider_name: Name of the provider (e.g., 'OpenAI', 'HuggingFace')
+            component: Name of the component being initialized
+            **kwargs: Initialization parameters to debug
+        """
+        print(f"🔧 DEBUG: Initializing {component} with:")
+        for key, value in kwargs.items():
+            if 'key' in key.lower() and value:
+                # Mask API keys for security
+                masked_value = '***' + str(value)[-4:] if len(str(value)) > 4 else '***'
+                print(f"   - {key}: {masked_value}")
+            else:
+                print(f"   - {key}: {value}")
     
     @abstractmethod
     def generate_response(self, prompt: str, **kwargs) -> str:
@@ -72,18 +126,19 @@ class OpenAIProvider(LLMProvider):
         except ImportError:
             raise ImportError("OpenAI provider requires langchain-openai to be installed")
         
-        # Debug: Print configuration values
-        print(f"🔧 DEBUG: OpenAIProvider configuration:")
-        print(f"   - Provided api_key: {'***' + api_key[-4:] if api_key else 'None'}")
-        print(f"   - Config OPENAI_API_KEY: {'***' + OPENAI_API_KEY[-4:] if OPENAI_API_KEY else 'None'}")
-        print(f"   - Provided llm_model: {llm_model}")
-        print(f"   - Config OPENAI_MODEL: {OPENAI_MODEL}")
-        print(f"   - Provided embedding_model: {embedding_model}")
-        print(f"   - Config OPENAI_EMBEDDING_MODEL: {OPENAI_EMBEDDING_MODEL}")
-        print(f"   - Provided temperature: {temperature}")
-        print(f"   - Config DEFAULT_TEMPERATURE: {DEFAULT_TEMPERATURE}")
-        print(f"   - Provided max_tokens: {max_tokens}")
-        print(f"   - Config DEFAULT_MAX_TOKENS: {DEFAULT_MAX_TOKENS}")
+        # Debug: Print configuration values using base class method
+        self.debug_configuration("OpenAI",
+            Provided_api_key=api_key,
+            Config_OPENAI_API_KEY=OPENAI_API_KEY,
+            Provided_llm_model=llm_model,
+            Config_OPENAI_MODEL=OPENAI_MODEL,
+            Provided_embedding_model=embedding_model,
+            Config_OPENAI_EMBEDDING_MODEL=OPENAI_EMBEDDING_MODEL,
+            Provided_temperature=temperature,
+            Config_DEFAULT_TEMPERATURE=DEFAULT_TEMPERATURE,
+            Provided_max_tokens=max_tokens,
+            Config_DEFAULT_MAX_TOKENS=DEFAULT_MAX_TOKENS
+        )
         
         # Use provided values or fall back to config defaults
         self.api_key = api_key or OPENAI_API_KEY
@@ -97,24 +152,26 @@ class OpenAIProvider(LLMProvider):
             self.embedding_model = "text-embedding-ada-002"
             print(f"⚠️ DEBUG: embedding_model was None, using default: {self.embedding_model}")
         
-        # Debug: Print final values
-        print(f"🔧 DEBUG: Final OpenAIProvider values:")
-        print(f"   - Final api_key: {'***' + self.api_key[-4:] if self.api_key else 'None'}")
-        print(f"   - Final llm_model: {self.llm_model}")
-        print(f"   - Final embedding_model: {self.embedding_model}")
-        print(f"   - Final temperature: {self.temperature}")
-        print(f"   - Final max_tokens: {self.max_tokens}")
+        # Debug: Print final values using base class method
+        self.debug_final_values("OpenAI",
+            api_key=self.api_key,
+            llm_model=self.llm_model,
+            embedding_model=self.embedding_model,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens
+        )
         
         # Validate API key
         if not self.api_key:
             raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable or pass api_key parameter.")
         
-        # Initialize components
-        print(f"🔧 DEBUG: Initializing ChatOpenAI with:")
-        print(f"   - api_key: {'***' + self.api_key[-4:] if self.api_key else 'None'}")
-        print(f"   - model: {self.llm_model}")
-        print(f"   - temperature: {self.temperature}")
-        print(f"   - max_tokens: {self.max_tokens}")
+        # Initialize components using base class method
+        self.debug_initialization("OpenAI", "ChatOpenAI",
+            api_key=self.api_key,
+            model=self.llm_model,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens
+        )
         
         self.llm = ChatOpenAI(
             openai_api_key=self.api_key,
@@ -123,9 +180,10 @@ class OpenAIProvider(LLMProvider):
             max_tokens=self.max_tokens
         )
         
-        print(f"🔧 DEBUG: Initializing OpenAIEmbeddings with:")
-        print(f"   - api_key: {'***' + self.api_key[-4:] if self.api_key else 'None'}")
-        print(f"   - model: {self.embedding_model}")
+        self.debug_initialization("OpenAI", "OpenAIEmbeddings",
+            api_key=self.api_key,
+            model=self.embedding_model
+        )
         
         self.embeddings = OpenAIEmbeddings(
             openai_api_key=self.api_key,
@@ -153,6 +211,14 @@ class OpenAIProvider(LLMProvider):
                 self._usage_stats["total_tokens"] += cb.total_tokens
                 self._usage_stats["prompt_tokens"] += cb.prompt_tokens
                 self._usage_stats["completion_tokens"] += cb.completion_tokens
+                
+                # Debug: Check what type cb.total_cost is
+                if isinstance(cb.total_cost, Decimal):
+                    print(f"🔍 DEBUG: cb.total_cost is Decimal: {cb.total_cost}")
+                    print(f"🔍 DEBUG: Current _usage_stats['total_cost'] type: {type(self._usage_stats['total_cost'])}")
+                    print(f"🔍 DEBUG: Current _usage_stats['total_cost'] value: {self._usage_stats['total_cost']}")
+                    raise ValueError(f"cb.total_cost is Decimal: {cb.total_cost}, current total_cost type: {type(self._usage_stats['total_cost'])}")
+                
                 self._usage_stats["total_cost"] += float(cb.total_cost)
                 
                 logger.info(f"OpenAI response generated. Tokens: {cb.total_tokens}, Cost: ${cb.total_cost:.4f}")
@@ -279,7 +345,7 @@ class HuggingFaceProvider(LLMProvider):
         except Exception as e:
             logger.error(f"Error getting HuggingFace embeddings: {str(e)}")
             raise
-    
+
     def get_model_info(self) -> Dict[str, Any]:
         """Get HuggingFace model information."""
         return {

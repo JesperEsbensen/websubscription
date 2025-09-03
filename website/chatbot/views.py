@@ -11,7 +11,8 @@ from .models import ChatSession, ChatMessage
 # Import RAG system components
 from rag.services import RAGDialogueService
 from rag.models import RAGDialogue
-from rag.config import SESSION_DOCS_MAPPING, DEFAULT_LLM_PROVIDER, DEFAULT_LLM_MODEL, DEFAULT_VECTOR_STORE_TYPE
+from rag.config import SESSION_DOCS_MAPPING
+from rag.rag_manager import rag_manager
 import os
 
 @login_required
@@ -265,24 +266,23 @@ def generate_bot_response(user_message, session_type, user=None):
             dialogue_title = f"{session_type.title()} Support Session"
             dialogue = rag_service.create_dialogue(
                 title=dialogue_title,
-                dialogue_type=rag_dialogue_type,
-                llm_provider=DEFAULT_LLM_PROVIDER,
-                llm_model=DEFAULT_LLM_MODEL,
-                vector_store_type=DEFAULT_VECTOR_STORE_TYPE
+                dialogue_type=rag_dialogue_type
             )
             print(f"✅ DEBUG: Created new dialogue: {dialogue.title} (ID: {dialogue.id})")
         
-        # Process the query through RAG system
-        print(f"🔍 DEBUG: Getting documents path for session type '{session_type}'")
-        documents_path = get_documents_path_for_session_type(session_type)
-        print(f"📁 DEBUG: Documents path: {documents_path}")
-        print(f"📁 DEBUG: Path exists: {os.path.exists(documents_path) if documents_path else 'None'}")
+        # Check if RAG systems are initialized
+        print(f"🔍 DEBUG: Checking RAG manager status...")
+        print(f"   - RAG manager initialized: {rag_manager.is_initialized()}")
+        print(f"   - Available systems: {rag_manager.get_available_systems()}")
+        
+        if not rag_manager.is_initialized():
+            print(f"❌ DEBUG: RAG systems not initialized, falling back to basic response")
+            return get_fallback_response(user_message, session_type)
         
         print(f"🤖 DEBUG: Processing query through RAG system...")
         result = rag_service.process_query(
             dialogue=dialogue,
             user_query=user_message,
-            documents_path=documents_path,
             include_intermediate=False  # Don't include intermediate data for chatbot responses
         )
         

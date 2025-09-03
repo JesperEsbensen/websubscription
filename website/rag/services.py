@@ -12,8 +12,7 @@ import hashlib
 import json
 
 from .models import RAGDialogue, RAGExchange, RAGDocument, RAGSystemLog
-from .rag import RAGSystem
-from .llm_providers import create_llm_provider
+from .rag_manager import rag_manager
 
 class RAGDialogueService:
     """
@@ -133,40 +132,19 @@ class RAGDialogueService:
             Dictionary containing the response and exchange information
         """
         try:
-            print(f"🔍 DEBUG: Services process_query - Creating LLM provider")
-            print(f"   - Provider type: {dialogue.llm_provider}")
-            print(f"   - LLM model: {dialogue.llm_model}")
-            print(f"   - Additional kwargs: {rag_kwargs}")
+            print(f"🔍 DEBUG: Services process_query - Getting RAG system")
+            print(f"   - Session type: {dialogue.dialogue_type}")
+            print(f"   - RAG manager initialized: {rag_manager.is_initialized()}")
+            print(f"   - Available systems: {rag_manager.get_available_systems()}")
             
-            # Create RAG system instance
-            llm_provider = create_llm_provider(
-                dialogue.llm_provider,
-                llm_model=dialogue.llm_model,
-                **rag_kwargs
-            )
+            # Get RAG system from manager
+            rag_system = rag_manager.get_rag_system(dialogue.dialogue_type)
             
-            print(f"✅ DEBUG: LLM provider created successfully")
+            if not rag_system:
+                print(f"❌ DEBUG: No RAG system available for dialogue type: {dialogue.dialogue_type}")
+                return {'error': f'No RAG system available for {dialogue.dialogue_type}'}
             
-            print(f"🔍 DEBUG: Creating RAG system")
-            print(f"   - Vector store type: {dialogue.vector_store_type}")
-            
-            rag_system = RAGSystem(
-                llm_provider=llm_provider,
-                vector_store_type=dialogue.vector_store_type
-            )
-            
-            print(f"✅ DEBUG: RAG system created successfully")
-            
-            # Load documents if path provided
-            if documents_path:
-                print(f"🔍 DEBUG: Loading documents from: {documents_path}")
-                documents = rag_system.load_directory(documents_path)
-                print(f"📊 DEBUG: Loaded {len(documents)} documents")
-                print(f"🔍 DEBUG: Creating vector store")
-                rag_system.create_vector_store(documents)
-                print(f"✅ DEBUG: Vector store created successfully")
-            else:
-                print(f"⚠️ DEBUG: No documents path provided, skipping document loading")
+            print(f"✅ DEBUG: RAG system retrieved successfully")
             
             # Process the query
             print(f"🔍 DEBUG: Processing query: {user_query}")
@@ -209,6 +187,21 @@ class RAGDialogueService:
             
             # Convert all Decimal values in the result
             result = convert_decimals_to_float(result)
+            
+            # Debug: Check for any remaining Decimal values
+            def check_for_decimals(obj, path=""):
+                """Recursively check for any remaining Decimal values and raise exception with path."""
+                if isinstance(obj, Decimal):
+                    raise ValueError(f"Found Decimal at path '{path}': {obj}")
+                elif isinstance(obj, dict):
+                    for k, v in obj.items():
+                        check_for_decimals(v, f"{path}.{k}" if path else k)
+                elif isinstance(obj, list):
+                    for i, item in enumerate(obj):
+                        check_for_decimals(item, f"{path}[{i}]")
+            
+            # Check for any remaining Decimal values
+            check_for_decimals(result, "result")
             
             # Calculate costs and tokens
             tokens_used = usage_stats.get('total_tokens', 0)
