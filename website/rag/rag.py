@@ -4,7 +4,6 @@
 # Core LangChain imports
 from langchain import hub
 from langchain.chains import RetrievalQA
-from langchain.chains.question_answering import load_qa_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter
 from langchain_community.document_loaders import (
     TextLoader,
@@ -62,10 +61,74 @@ from sklearn.metrics.pairwise import cosine_similarity
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Set root logger to WARNING to reduce noise from all libraries
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.WARNING)
+
+# Set our specific loggers back to INFO for important messages
+logging.getLogger(__name__).setLevel(logging.INFO)
+
+# Additional aggressive logging suppression
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 # Suppress verbose LangChain logging
 logging.getLogger("langchain").setLevel(logging.WARNING)
 logging.getLogger("langchain_community").setLevel(logging.WARNING)
 logging.getLogger("langchain_openai").setLevel(logging.WARNING)
+logging.getLogger("langchain_core").setLevel(logging.WARNING)
+logging.getLogger("langchain_text_splitters").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.document_loaders").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.vectorstores").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.embeddings").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.llms").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.chat_models").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.callbacks").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.callbacks.manager").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.callbacks.streaming_stdout").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.callbacks.streaming_aiter").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.callbacks.streaming_stdout_final_only").setLevel(logging.WARNING)
+logging.getLogger("langchain_community.callbacks.streaming_aiter_final_only").setLevel(logging.WARNING)
+
+# Suppress other verbose libraries
+logging.getLogger("chromadb").setLevel(logging.WARNING)
+logging.getLogger("chromadb.api").setLevel(logging.WARNING)
+logging.getLogger("chromadb.db").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("transformers").setLevel(logging.WARNING)
+logging.getLogger("torch").setLevel(logging.WARNING)
+logging.getLogger("tqdm").setLevel(logging.WARNING)
+
+# Suppress PDF processing libraries
+logging.getLogger("pdfminer").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfinterp").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfpage").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.converter").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.layout").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfparser").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfdocument").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.psparser").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfinterp").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfpage").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.converter").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.layout").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfparser").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfdocument").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.psparser").setLevel(logging.WARNING)
+
+# Suppress unstructured library logging
+logging.getLogger("unstructured").setLevel(logging.WARNING)
+logging.getLogger("unstructured.partition").setLevel(logging.WARNING)
+logging.getLogger("unstructured.chunking").setLevel(logging.WARNING)
+
+# Suppress other document processing libraries
+logging.getLogger("pypdf").setLevel(logging.WARNING)
+logging.getLogger("pymupdf").setLevel(logging.WARNING)
+logging.getLogger("fitz").setLevel(logging.WARNING)
+logging.getLogger("docx").setLevel(logging.WARNING)
+logging.getLogger("python-docx").setLevel(logging.WARNING)
 
 class RAGSystem:
     """
@@ -101,19 +164,19 @@ class RAGSystem:
             temperature: LLM temperature for response generation
             max_tokens: Maximum tokens for LLM responses
         """
-        print(f"🔧 DEBUG: Initializing RAG system with LLM provider: {llm_provider.get_model_info()['provider']}")
+        logger.debug(f"Initializing RAG system with LLM provider: {llm_provider.get_model_info()['provider']}")
         self.llm_provider = llm_provider
         self.vector_store_type = vector_store_type or DEFAULT_VECTOR_STORE
         self.chunk_size = chunk_size if chunk_size is not None else DEFAULT_CHUNK_SIZE
         self.chunk_overlap = chunk_overlap if chunk_overlap is not None else DEFAULT_CHUNK_OVERLAP
         self.temperature = temperature if temperature is not None else DEFAULT_TEMPERATURE
         self.max_tokens = max_tokens if max_tokens is not None else DEFAULT_MAX_TOKENS
-        print(f"🔧 DEBUG: RAG system initialized with chunk size: {self.chunk_size}, chunk overlap: {self.chunk_overlap}, temperature: {self.temperature}, max_tokens: {self.max_tokens}")
+        logger.debug(f"RAG system initialized with chunk size: {self.chunk_size}, chunk overlap: {self.chunk_overlap}, temperature: {self.temperature}, max_tokens: {self.max_tokens}")
         
         # Initialize text splitter
-        print(f"🔧 DEBUG: Creating text splitter with:")
-        print(f"   - chunk_size: {self.chunk_size}")
-        print(f"   - chunk_overlap: {self.chunk_overlap}")
+        logger.debug(f"Creating text splitter with:")
+        logger.debug(f"   - chunk_size: {self.chunk_size}")
+        logger.debug(f"   - chunk_overlap: {self.chunk_overlap}")
         
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
@@ -121,7 +184,7 @@ class RAGSystem:
             length_function=len,
             separators=["\n\n", "\n", " ", ""]
         )
-        print(f"✅ DEBUG: Text splitter initialized successfully")
+        logger.debug("Text splitter initialized successfully")
         
         self.vector_store = None
         self.retriever = None
@@ -169,7 +232,8 @@ class RAGSystem:
                 
                 docs = loader.load()
                 documents.extend(docs)
-                logger.info(f"Loaded {len(docs)} documents from {file_path}")
+                logger.info(f"📄 Loaded document: {file_path.name}")
+                logger.debug(f"Loaded {len(docs)} documents from {file_path}")
                 
             except Exception as e:
                 logger.error(f"Error loading {file_path}: {str(e)}")
@@ -188,15 +252,43 @@ class RAGSystem:
         Returns:
             List of LangChain Document objects
         """
-        loader = DirectoryLoader(
-            directory_path,
-            glob=glob_pattern,
-            show_progress=True,
-            use_multithreading=True
-        )
+        documents = []
+        directory_path = Path(directory_path)
         
-        documents = loader.load()
-        logger.info(f"Loaded {len(documents)} documents from directory {directory_path}")
+        # Get all matching files first
+        matching_files = list(directory_path.glob(glob_pattern))
+        file_count = 0
+        
+        for file_path in matching_files:
+            if file_path.is_file() and not file_path.name.startswith('.'):
+                try:
+                    # Load individual file
+                    if file_path.suffix.lower() == '.txt':
+                        loader = TextLoader(str(file_path))
+                    elif file_path.suffix.lower() == '.pdf':
+                        loader = PDFMinerLoader(str(file_path))
+                    elif file_path.suffix.lower() == '.csv':
+                        loader = CSVLoader(str(file_path))
+                    elif file_path.suffix.lower() == '.json':
+                        loader = JSONLoader(
+                            file_path=str(file_path),
+                            jq_schema='.',
+                            text_content=False
+                        )
+                    else:
+                        # Try unstructured loader for other formats
+                        loader = UnstructuredFileLoader(str(file_path))
+                    
+                    docs = loader.load()
+                    documents.extend(docs)
+                    file_count += 1
+                    logger.info(f"📄 Loaded document: {file_path.name}")
+                    
+                except Exception as e:
+                    logger.error(f"Error loading {file_path}: {str(e)}")
+                    continue
+        
+        logger.info(f"📁 Loaded {file_count} documents from directory: {directory_path}")
         return documents
     
     def split_documents(self, documents: List[Document]) -> List[Document]:
@@ -210,7 +302,7 @@ class RAGSystem:
             List of split document chunks
         """
         split_docs = self.text_splitter.split_documents(documents)
-        logger.info(f"Split {len(documents)} documents into {len(split_docs)} chunks")
+        logger.info(f"✂️ Split {len(documents)} documents into {len(split_docs)} chunks")
         return split_docs
     
     def create_vector_store(self, documents: List[Document], persist_directory: str = None) -> None:
@@ -226,25 +318,31 @@ class RAGSystem:
             return
         
         try:
+            # Split documents into chunks first
+            logger.info(f"🔄 Processing {len(documents)} documents for vector store...")
+            split_docs = self.split_documents(documents)
+            
             if self.vector_store_type.lower() == "chroma":
                 persist_dir = persist_directory or "./chroma_db"
+                logger.info(f"🗄️ Creating Chroma vector store with {len(split_docs)} chunks...")
                 self.vector_store = Chroma.from_documents(
-                    documents=documents,
+                    documents=split_docs,
                     embedding=self.llm_provider.embeddings,
                     persist_directory=persist_dir
                 )
                 # Chroma 0.4.x automatically persists, no need to call persist()
                 
             elif self.vector_store_type.lower() == "faiss":
+                logger.info(f"🗄️ Creating FAISS vector store with {len(split_docs)} chunks...")
                 self.vector_store = FAISS.from_documents(
-                    documents=documents,
+                    documents=split_docs,
                     embedding=self.llm_provider.embeddings
                 )
                 
             elif self.vector_store_type.lower() == "pinecone":
                 # Note: Requires Pinecone API key and index name
                 # self.vector_store = Pinecone.from_documents(
-                #     documents=documents,
+                #     documents=split_docs,
                 #     embedding=self.llm_provider.embeddings,
                 #     index_name="your-index-name"
                 # )
@@ -264,7 +362,7 @@ class RAGSystem:
             # Initialize QA chain with custom LLM wrapper
             self.qa_chain = self._create_qa_chain()
             
-            logger.info(f"Vector store created with {len(documents)} documents")
+            logger.info(f"✅ Vector store created successfully with {len(split_docs)} chunks")
             
         except Exception as e:
             logger.error(f"Error creating vector store: {str(e)}")
@@ -362,13 +460,14 @@ class RAGSystem:
             return
         
         try:
+            logger.info(f"🔄 Adding {len(documents)} new documents to vector store...")
             split_docs = self.split_documents(documents)
             self.vector_store.add_documents(split_docs)
             
             if hasattr(self.vector_store, 'persist'):
                 self.vector_store.persist()
             
-            logger.info(f"Added {len(split_docs)} document chunks to vector store")
+            logger.info(f"✅ Added {len(split_docs)} document chunks to vector store")
             
         except Exception as e:
             logger.error(f"Error adding documents: {str(e)}")
@@ -398,22 +497,34 @@ class RAGSystem:
             }
             
             # Step 1: Document retrieval
-            logger.info(f"Retrieving relevant documents for query: {question}")
+            logger.info(f"🔍 Query: {question}")
             start_time = time.time()
             relevant_docs = self.similarity_search(question, k=k)
             retrieval_time = time.time() - start_time
+            
+            # Log retrieved documents in a clean format
+            if relevant_docs:
+                logger.info(f"📚 Retrieved {len(relevant_docs)} relevant documents:")
+                for i, doc in enumerate(relevant_docs, 1):
+                    score = doc.metadata.get('similarity_score', None)
+                    first_line = doc.page_content.split('\n')[0][:80] + "..." if len(doc.page_content.split('\n')[0]) > 80 else doc.page_content.split('\n')[0]
+                    source = doc.metadata.get('source', 'Unknown')
+                    source_name = Path(source).name if source != 'Unknown' else 'Unknown'
+                    logger.info(f"  {i}. [{score:.3f}] {source_name}: {first_line}")
+            else:
+                logger.warning("No relevant documents found for query")
             
             processing_info["steps"].append({
                 "step": "document_retrieval",
                 "duration": retrieval_time,
                 "documents_found": len(relevant_docs),
-                                        "documents": [
-                            {
-                                "content": doc.page_content[:200] + "..." if len(doc.page_content) > 200 else doc.page_content,
-                                "metadata": doc.metadata,
-                                "score": doc.metadata.get('similarity_score', None)
-                            } for doc in relevant_docs
-                        ]
+                "documents": [
+                    {
+                        "first_line": doc.page_content.split('\n')[0][:100] + "..." if len(doc.page_content.split('\n')[0]) > 100 else doc.page_content.split('\n')[0],
+                        "source": doc.metadata.get('source', 'Unknown'),
+                        "score": doc.metadata.get('similarity_score', None)
+                    } for doc in relevant_docs
+                ]
             })
             
             # Step 2: Context preparation
@@ -453,7 +564,7 @@ class RAGSystem:
                 "usage_stats": usage_stats,
                 "provider_info": self.llm_provider.get_model_info()
             }
-            print(f"🔧 DEBUG: Result: {result["result"]}")
+            logger.debug(f"Result: {result['result']}")
             
             # Add intermediate information if requested
             if include_intermediate:
@@ -464,7 +575,7 @@ class RAGSystem:
                     "retrieval_scores": [doc.metadata.get('similarity_score', None) for doc in relevant_docs]
                 }
             
-            logger.info(f"Query processed in {total_time:.2f}s using {self.llm_provider.get_model_info()['provider']} provider")
+            logger.debug(f"Query processed in {total_time:.2f}s using {self.llm_provider.get_model_info()['provider']} provider")
             return response
                 
         except Exception as e:
@@ -502,10 +613,15 @@ class RAGSystem:
             else:
                 docs = self.vector_store.similarity_search(query, k=k)
             
-            logger.info(f"Retrieved {len(docs)} documents for query: {query}")
+            logger.debug(f"Retrieved {len(docs)} documents for query: {query}")
             if include_scores and docs:
-                scores = [doc.metadata.get('similarity_score', None) for doc in docs]
-                logger.info(f"Similarity scores: {scores}")
+                # Log a clean summary of retrieved documents
+                for i, doc in enumerate(docs, 1):
+                    score = doc.metadata.get('similarity_score', None)
+                    first_line = doc.page_content.split('\n')[0][:80] + "..." if len(doc.page_content.split('\n')[0]) > 80 else doc.page_content.split('\n')[0]
+                    source = doc.metadata.get('source', 'Unknown')
+                    source_name = Path(source).name if source != 'Unknown' else 'Unknown'
+                    logger.debug(f"  {i}. [{score:.3f}] {source_name}: {first_line}")
             
             return docs
             

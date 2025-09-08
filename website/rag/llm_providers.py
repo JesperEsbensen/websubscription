@@ -7,25 +7,62 @@ from decimal import Decimal
 import logging
 import os
 
+# Configure logging first
+logger = logging.getLogger(__name__)
+
+# Suppress warnings
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# Suppress verbose logging from external libraries
+logging.getLogger("openai").setLevel(logging.WARNING)
+logging.getLogger("anthropic").setLevel(logging.WARNING)
+logging.getLogger("transformers").setLevel(logging.WARNING)
+logging.getLogger("torch").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("tqdm").setLevel(logging.WARNING)
+
+# Suppress PDF processing libraries
+logging.getLogger("pdfminer").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfinterp").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfpage").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.converter").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.layout").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfparser").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.pdfdocument").setLevel(logging.WARNING)
+logging.getLogger("pdfminer.psparser").setLevel(logging.WARNING)
+
+# Suppress unstructured library logging
+logging.getLogger("unstructured").setLevel(logging.WARNING)
+logging.getLogger("unstructured.partition").setLevel(logging.WARNING)
+logging.getLogger("unstructured.chunking").setLevel(logging.WARNING)
+
+# Suppress other document processing libraries
+logging.getLogger("pypdf").setLevel(logging.WARNING)
+logging.getLogger("pymupdf").setLevel(logging.WARNING)
+logging.getLogger("fitz").setLevel(logging.WARNING)
+logging.getLogger("docx").setLevel(logging.WARNING)
+logging.getLogger("python-docx").setLevel(logging.WARNING)
+
 # Import configuration
 try:
     from .config import (
         OPENAI_API_KEY, OPENAI_MODEL, OPENAI_EMBEDDING_MODEL,
         DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
     )
-    print(f"✅ DEBUG: Successfully imported config values:")
-    print(f"   - OPENAI_MODEL: {OPENAI_MODEL}")
-    print(f"   - OPENAI_EMBEDDING_MODEL: {OPENAI_EMBEDDING_MODEL}")
+    logger.debug(f"Successfully imported config values:")
+    logger.debug(f"   - OPENAI_MODEL: {OPENAI_MODEL}")
+    logger.debug(f"   - OPENAI_EMBEDDING_MODEL: {OPENAI_EMBEDDING_MODEL}")
 except ImportError as e:
     # Fallback values if config is not available
-    print(f"⚠️ DEBUG: Failed to import config, using fallback values: {e}")
+    logger.warning(f"Failed to import config, using fallback values: {e}")
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
     OPENAI_MODEL = 'gpt-3.5-turbo'
     OPENAI_EMBEDDING_MODEL = 'text-embedding-ada-002'
     DEFAULT_TEMPERATURE = 0.7
     DEFAULT_MAX_TOKENS = 1000
-
-logger = logging.getLogger(__name__)
 
 class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
@@ -39,14 +76,14 @@ class LLMProvider(ABC):
             provider_name: Name of the provider (e.g., 'OpenAI', 'HuggingFace')
             **kwargs: Configuration key-value pairs to debug
         """
-        print(f"🔧 DEBUG: {provider_name}Provider configuration:")
+        logger.debug(f"{provider_name}Provider configuration:")
         for key, value in kwargs.items():
             if 'key' in key.lower() and value:
                 # Mask API keys for security
                 masked_value = '***' + str(value)[-4:] if len(str(value)) > 4 else '***'
-                print(f"   - {key}: {masked_value}")
+                logger.debug(f"   - {key}: {masked_value}")
             else:
-                print(f"   - {key}: {value}")
+                logger.debug(f"   - {key}: {value}")
     
     def debug_final_values(self, provider_name: str, **kwargs):
         """
@@ -56,14 +93,14 @@ class LLMProvider(ABC):
             provider_name: Name of the provider (e.g., 'OpenAI', 'HuggingFace')
             **kwargs: Final key-value pairs to debug
         """
-        print(f"🔧 DEBUG: Final {provider_name}Provider values:")
+        logger.debug(f"Final {provider_name}Provider values:")
         for key, value in kwargs.items():
             if 'key' in key.lower() and value:
                 # Mask API keys for security
                 masked_value = '***' + str(value)[-4:] if len(str(value)) > 4 else '***'
-                print(f"   - Final {key}: {masked_value}")
+                logger.debug(f"   - Final {key}: {masked_value}")
             else:
-                print(f"   - Final {key}: {value}")
+                logger.debug(f"   - Final {key}: {value}")
     
     def debug_initialization(self, provider_name: str, component: str, **kwargs):
         """
@@ -74,14 +111,14 @@ class LLMProvider(ABC):
             component: Name of the component being initialized
             **kwargs: Initialization parameters to debug
         """
-        print(f"🔧 DEBUG: Initializing {component} with:")
+        logger.debug(f"Initializing {component} with:")
         for key, value in kwargs.items():
             if 'key' in key.lower() and value:
                 # Mask API keys for security
                 masked_value = '***' + str(value)[-4:] if len(str(value)) > 4 else '***'
-                print(f"   - {key}: {masked_value}")
+                logger.debug(f"   - {key}: {masked_value}")
             else:
-                print(f"   - {key}: {value}")
+                logger.debug(f"   - {key}: {value}")
     
     @abstractmethod
     def generate_response(self, prompt: str, **kwargs) -> str:
@@ -137,6 +174,7 @@ class OpenAIProvider(LLMProvider):
             Provided_temperature=temperature,
             Config_DEFAULT_TEMPERATURE=DEFAULT_TEMPERATURE,
             Provided_max_tokens=max_tokens,
+         
             Config_DEFAULT_MAX_TOKENS=DEFAULT_MAX_TOKENS
         )
         
@@ -150,7 +188,7 @@ class OpenAIProvider(LLMProvider):
         # Ensure embedding_model is never None
         if not self.embedding_model:
             self.embedding_model = "text-embedding-ada-002"
-            print(f"⚠️ DEBUG: embedding_model was None, using default: {self.embedding_model}")
+            logger.warning(f"embedding_model was None, using default: {self.embedding_model}")
         
         # Debug: Print final values using base class method
         self.debug_final_values("OpenAI",
@@ -197,7 +235,7 @@ class OpenAIProvider(LLMProvider):
             "total_cost": 0.0
         }
         
-        logger.info(f"OpenAI provider initialized with model: {llm_model}")
+        logger.debug(f"OpenAI provider initialized with model: {llm_model}")
     
     def generate_response(self, prompt: str, **kwargs) -> str:
         """Generate response using OpenAI."""
@@ -214,14 +252,14 @@ class OpenAIProvider(LLMProvider):
                 
                 # Debug: Check what type cb.total_cost is
                 if isinstance(cb.total_cost, Decimal):
-                    print(f"🔍 DEBUG: cb.total_cost is Decimal: {cb.total_cost}")
-                    print(f"🔍 DEBUG: Current _usage_stats['total_cost'] type: {type(self._usage_stats['total_cost'])}")
-                    print(f"🔍 DEBUG: Current _usage_stats['total_cost'] value: {self._usage_stats['total_cost']}")
+                    logger.debug(f"cb.total_cost is Decimal: {cb.total_cost}")
+                    logger.debug(f"Current _usage_stats['total_cost'] type: {type(self._usage_stats['total_cost'])}")
+                    logger.debug(f"Current _usage_stats['total_cost'] value: {self._usage_stats['total_cost']}")
                     raise ValueError(f"cb.total_cost is Decimal: {cb.total_cost}, current total_cost type: {type(self._usage_stats['total_cost'])}")
                 
                 self._usage_stats["total_cost"] += float(cb.total_cost)
                 
-                logger.info(f"OpenAI response generated. Tokens: {cb.total_tokens}, Cost: ${cb.total_cost:.4f}")
+                logger.debug(f"OpenAI response generated. Tokens: {cb.total_tokens}, Cost: ${cb.total_cost:.4f}")
                 return response
                 
         except Exception as e:
@@ -316,7 +354,7 @@ class HuggingFaceProvider(LLMProvider):
             "generations": 0
         }
         
-        logger.info(f"HuggingFace provider initialized with model: {llm_model}")
+        logger.debug(f"HuggingFace provider initialized with model: {llm_model}")
     
     def generate_response(self, prompt: str, **kwargs) -> str:
         """Generate response using HuggingFace."""
@@ -400,7 +438,7 @@ class AnthropicProvider(LLMProvider):
             "generations": 0
         }
         
-        logger.info(f"Anthropic provider initialized with model: {llm_model}")
+        logger.debug(f"Anthropic provider initialized with model: {llm_model}")
     
     def generate_response(self, prompt: str, **kwargs) -> str:
         """Generate response using Anthropic Claude."""
@@ -473,7 +511,7 @@ class LocalProvider(LLMProvider):
             "generations": 0
         }
         
-        logger.info(f"Local provider initialized with model: {llm_model}")
+        logger.debug(f"Local provider initialized with model: {llm_model}")
     
     def generate_response(self, prompt: str, **kwargs) -> str:
         """Generate response using local LLM."""

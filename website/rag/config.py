@@ -20,15 +20,14 @@ DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 1000
 
 # Document paths
-TEST_DOCS_PATH = os.path.join(BASE_DIR, 'rag', 'test_docs')
+LIBRARY_PATH = os.path.join(BASE_DIR, 'library')
 CHROMA_DB_PATH = os.path.join(BASE_DIR, 'rag', 'chroma_db')
 
 # Session type to document mapping
 SESSION_DOCS_MAPPING = {
-    'esg': os.path.join(TEST_DOCS_PATH, 'esg'),
-    'technical': os.path.join(TEST_DOCS_PATH, 'technical'),
-    'billing': os.path.join(TEST_DOCS_PATH, 'billing'),
-    'general': TEST_DOCS_PATH
+    'esg': os.path.join(LIBRARY_PATH, 'esg'),
+    'system': os.path.join(LIBRARY_PATH, 'system'),
+    'general': os.path.join(LIBRARY_PATH, 'general')
 }
 
 # LLM Provider Configuration

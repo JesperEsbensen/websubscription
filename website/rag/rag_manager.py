@@ -3,15 +3,21 @@ RAG System Manager - Singleton for managing RAG system initialization
 """
 import os
 import logging
+import warnings
 from typing import Dict, Optional
 from django.conf import settings
 from pathlib import Path
+
+# Suppress warnings and verbose logging
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from .rag import RAGSystem
 from .llm_providers import create_llm_provider
 from .config import (
     DEFAULT_LLM_PROVIDER, DEFAULT_LLM_MODEL, DEFAULT_VECTOR_STORE_TYPE,
-    SESSION_DOCS_MAPPING, TEST_DOCS_PATH
+    SESSION_DOCS_MAPPING, LIBRARY_PATH
 )
 
 logger = logging.getLogger(__name__)
@@ -77,14 +83,14 @@ class RAGSystemManager:
                 else:
                     logger.warning(f"⚠️ Documents path does not exist for {session_type}: {docs_path}")
             
-            # Initialize general RAG system as fallback
-            if 'general' not in self._rag_systems and os.path.exists(TEST_DOCS_PATH):
-                logger.info(f"Initializing general RAG system with docs at {TEST_DOCS_PATH}")
+            # Initialize general RAG system as fallback (only if no other systems exist)
+            if not self._rag_systems and os.path.exists(LIBRARY_PATH):
+                logger.info(f"Initializing general RAG system with docs at {LIBRARY_PATH}")
                 rag_system = RAGSystem(
                     llm_provider=llm_provider,
                     vector_store_type=DEFAULT_VECTOR_STORE_TYPE
                 )
-                documents = rag_system.load_directory(TEST_DOCS_PATH)
+                documents = rag_system.load_directory(LIBRARY_PATH)
                 if documents:
                     rag_system.create_vector_store(documents)
                     self._rag_systems['general'] = rag_system
