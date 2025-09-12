@@ -138,3 +138,6 @@ website/media/profile_images/
 
 # Secrets
 /secrets
+
+# Library files
+website/library/
