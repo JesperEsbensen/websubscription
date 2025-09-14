@@ -31,3 +31,7 @@ class RagConfig(AppConfig):
             logger.error(f"❌ Failed to initialize RAG systems: {str(e)}")
             # Don't raise the exception to allow Django to start
             # The RAG system will fall back to basic responses if needed
+
+
+        # Note: DB systems are now initialized through rag_manager.initialize_rag_systems()
+        # No need for separate db_handler.initialize() call

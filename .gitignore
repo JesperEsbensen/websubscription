@@ -131,6 +131,7 @@ dmypy.json
 # databases
 /chroma_db
 website/chroma_db/
+docling_db/
 
 # Media files (user uploads)
 /media/profile_images/

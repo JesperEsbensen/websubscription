@@ -21,7 +21,8 @@ DEFAULT_MAX_TOKENS = 1000
 
 # Document paths
 LIBRARY_PATH = os.path.join(BASE_DIR, 'library')
-CHROMA_DB_PATH = os.path.join(BASE_DIR, 'rag', 'chroma_db')
+CHROMA_DB_PATH = os.path.join(BASE_DIR, 'chroma_db')
+DOCLING_DB_PATH = os.path.join(BASE_DIR, 'docling_db')
 
 # Session type to document mapping
 SESSION_DOCS_MAPPING = {
@@ -29,6 +30,19 @@ SESSION_DOCS_MAPPING = {
     'system': os.path.join(LIBRARY_PATH, 'system'),
     'general': os.path.join(LIBRARY_PATH, 'general')
 }
+
+# Document cache configuration
+CACHE_DIR: str = "document_cache"
+CACHE_EXPIRE_DAYS: int = 7
+
+# Maximum allowed size for a single file (50 MB)
+MAX_FILE_SIZE: int = 50 * 1024 * 1024
+
+# Maximum allowed total size for all uploaded files (200 MB)
+MAX_TOTAL_SIZE: int = 200 * 1024 * 1024
+
+# Allowed file types for upload
+ALLOWED_TYPES: list = [".txt", ".pdf", ".docx", ".md"]
 
 # LLM Provider Configuration
 DEFAULT_LLM_PROVIDER = 'openai'

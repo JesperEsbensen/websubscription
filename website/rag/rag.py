@@ -35,7 +35,7 @@ from .llm_providers import LLMProvider, create_llm_provider
 try:
     from .config import (
         DEFAULT_VECTOR_STORE, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP,
-        DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
+        DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS, DOCLING_DB_PATH, LIBRARY_PATH
     )
 except ImportError:
     # Fallback values if config is not available
@@ -44,6 +44,12 @@ except ImportError:
     DEFAULT_CHUNK_OVERLAP = 200
     DEFAULT_TEMPERATURE = 0.7
     DEFAULT_MAX_TOKENS = 1000
+    DOCLING_DB_PATH = "docling_db"
+    LIBRARY_PATH = "library"
+
+
+# Import docling_chroma_db directly
+from .docling_chroma_db import DoclingChromaDB
 
 # For document processing
 import os
@@ -305,6 +311,58 @@ class RAGSystem:
         logger.info(f"✂️ Split {len(documents)} documents into {len(split_docs)} chunks")
         return split_docs
     
+    def _create_minimal_vector_store(self) -> None:
+        """
+        Create a minimal vector store and QA chain even when no documents are available.
+        This ensures the QA chain is initialized for basic queries.
+        """
+        try:
+            logger.info("Creating minimal vector store for empty document set...")
+            
+            if self.vector_store_type.lower() == "chroma":
+                # Create an empty Chroma vector store
+                self.vector_store = Chroma(
+                    embedding_function=self.llm_provider.embeddings,
+                    persist_directory="./chroma_db"
+                )
+                
+                # Create a simple retriever
+                self.retriever = self.vector_store.as_retriever(
+                    search_type="similarity",
+                    search_kwargs={"k": 5}
+                )
+                
+                # Initialize QA chain
+                self.qa_chain = self._create_qa_chain()
+                
+                logger.info("✅ Minimal vector store and QA chain created successfully")
+                
+            else:
+                logger.warning(f"Minimal vector store not implemented for {self.vector_store_type}")
+                
+        except Exception as e:
+            logger.error(f"Error creating minimal vector store: {str(e)}")
+            # Still try to create a basic QA chain without vector store
+            self._create_basic_qa_chain()
+    
+    def _create_basic_qa_chain(self) -> None:
+        """
+        Create a basic QA chain without vector store for simple queries.
+        """
+        try:
+            logger.info("Creating basic QA chain without vector store...")
+            
+            # Create a simple LLM wrapper
+            llm_wrapper = ProviderLLMWrapper(self.llm_provider)
+            
+            # Create a basic QA chain that just uses the LLM directly
+            self.qa_chain = llm_wrapper
+            
+            logger.info("✅ Basic QA chain created successfully")
+            
+        except Exception as e:
+            logger.error(f"Error creating basic QA chain: {str(e)}")
+    
     def create_vector_store(self, documents: List[Document], persist_directory: str = None) -> None:
         """
         Create and initialize the vector store with documents.
@@ -315,6 +373,8 @@ class RAGSystem:
         """
         if not documents:
             logger.warning("No documents provided for vector store creation")
+            # Still create a minimal vector store and QA chain for empty queries
+            self._create_minimal_vector_store()
             return
         
         try:
@@ -354,10 +414,18 @@ class RAGSystem:
                 return
             
             # Initialize retriever
-            self.retriever = self.vector_store.as_retriever(
-                search_type="similarity",
-                search_kwargs={"k": 5}
+            # self.retriever = self.vector_store.as_retriever(
+            #     search_type="similarity",
+            #     search_kwargs={"k": 5}
+            # )
+
+            # Use retriever from docling_chroma_db
+            db = DoclingChromaDB(
+                persist_dir=os.path.join(DOCLING_DB_PATH, 'esg'),
+                collection_name="esg"
             )
+            db.add_paths([os.path.join(LIBRARY_PATH, 'esg')])
+            self.retriever =lc_retriever = db.as_retriever(k=4, strategy="hybrid")  # or "vector"/"bm25"
             
             # Initialize QA chain with custom LLM wrapper
             self.qa_chain = self._create_qa_chain()
@@ -541,7 +609,23 @@ class RAGSystem:
             
             # Step 3: LLM processing
             start_time = time.time()
-            result = self.qa_chain.invoke({"query": question})
+            
+            # Handle different types of QA chains
+            if hasattr(self.qa_chain, 'invoke'):
+                # Full RetrievalQA chain
+                result = self.qa_chain.invoke({"query": question})
+            else:
+                # Direct LLM wrapper - create a simple response
+                if relevant_docs:
+                    context = "\n\n".join([doc.page_content for doc in relevant_docs])
+                    prompt = f"Based on the following context, please answer the question: {question}\n\nContext:\n{context}"
+                else:
+                    prompt = f"Please answer the following question: {question}"
+                
+                result = self.qa_chain.invoke(prompt)
+                # Wrap the result in the expected format
+                result = {"result": result}
+            
             llm_time = time.time() - start_time
             
             processing_info["steps"].append({
