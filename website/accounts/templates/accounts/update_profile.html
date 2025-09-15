@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Update Profile - ESG Support{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-gear"></i> Update Profile
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Bio Section -->
+                        <div class="mb-4">
+                            <h5 class="text-primary">
+                                <i class="bi bi-person-lines-fill"></i> About You
+                            </h5>
+                            <div class="form-group">
+                                <label for="{{ form.bio.id_for_label }}" class="form-label">
+                                    Bio
+                                </label>
+                                {{ form.bio }}
+                                {% if form.bio.help_text %}
+                                    <small class="form-text text-muted">{{ form.bio.help_text }}</small>
+                                {% endif %}
+                                {% if form.bio.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.bio.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Location & Preferences Section -->
+                        <div class="mb-4">
+                            <h5 class="text-primary">
+                                <i class="bi bi-geo-alt"></i> Location & Preferences
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="{{ form.location_country.id_for_label }}" class="form-label">
+                                            Country
+                                        </label>
+                                        {{ form.location_country }}
+                                        {% if form.location_country.help_text %}
+                                            <small class="form-text text-muted">{{ form.location_country.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.location_country.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.location_country.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="{{ form.timezone.id_for_label }}" class="form-label">
+                                            Timezone
+                                        </label>
+                                        {{ form.timezone }}
+                                        {% if form.timezone.help_text %}
+                                            <small class="form-text text-muted">{{ form.timezone.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.timezone.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.timezone.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="{{ form.language_preference.id_for_label }}" class="form-label">
+                                            Preferred Language
+                                        </label>
+                                        {{ form.language_preference }}
+                                        {% if form.language_preference.help_text %}
+                                            <small class="form-text text-muted">{{ form.language_preference.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.language_preference.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.language_preference.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'profile' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to Profile
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Help Section -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Why We Ask for This Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="bi bi-geo-alt text-primary"></i> Country</h6>
+                            <p class="small text-muted">Helps us provide region-specific ESG guidance and compliance information.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="bi bi-clock text-primary"></i> Timezone</h6>
+                            <p class="small text-muted">Ensures accurate timestamps and scheduling for your reports and notifications.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="bi bi-translate text-primary"></i> Language</h6>
+                            <p class="small text-muted">Allows us to provide content in your preferred language when available.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus {
+    border-color: var(--medium-green);
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.card-header h3, .card-header h5 {
+    color: var(--dark-green);
+}
+
+.text-primary {
+    color: var(--medium-green) !important;
+}
+</style>
+{% endblock %}

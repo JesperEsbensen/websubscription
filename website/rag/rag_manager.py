@@ -99,49 +99,10 @@ class RAGSystemManager:
                         
                     except RuntimeError as e:
                         logger.warning(f"⚠️ DoclingChromaDB not available for {session_type}: {e}")
-                        # Fallback to regular RAG system
-                        logger.info(f"Falling back to regular RAG system for {session_type}")
-                        rag_system = RAGSystem(
-                            llm_provider=llm_provider,
-                            vector_store_type=DEFAULT_VECTOR_STORE_TYPE
-                        )
-                        documents = rag_system.load_directory(docs_path)
-                        if documents:
-                            rag_system.create_vector_store(documents)
-                            logger.info(f"✅ Fallback RAG system initialized for {session_type} with {len(documents)} documents")
-                        else:
-                            # Initialize with empty vector store to ensure QA chain is available
-                            rag_system.create_vector_store([])
-                            logger.warning(f"⚠️ No documents found for {session_type} at {docs_path}, but RAG system initialized with empty store")
-                        
-                        self._rag_systems[session_type] = rag_system
+
                 else:
                     logger.warning(f"⚠️ Documents path does not exist for {session_type}: {docs_path}")
             
-            # Initialize general RAG system as fallback (only if no other systems exist)
-            if not self._rag_systems:
-                logger.info("Initializing general RAG system as fallback")
-                rag_system = RAGSystem(
-                    llm_provider=llm_provider,
-                    vector_store_type=DEFAULT_VECTOR_STORE_TYPE
-                )
-                
-                if os.path.exists(LIBRARY_PATH):
-                    logger.info(f"Loading documents from {LIBRARY_PATH}")
-                    documents = rag_system.load_directory(LIBRARY_PATH)
-                    if documents:
-                        rag_system.create_vector_store(documents)
-                        logger.info(f"✅ General RAG system initialized with {len(documents)} documents")
-                    else:
-                        # Initialize with empty vector store to ensure QA chain is available
-                        rag_system.create_vector_store([])
-                        logger.warning(f"⚠️ No documents found in {LIBRARY_PATH}, but general RAG system initialized with empty store")
-                else:
-                    logger.info("No library path exists, initializing with empty store")
-                    rag_system.create_vector_store([])
-                    logger.info("✅ General RAG system initialized with empty store")
-                
-                self._rag_systems['general'] = rag_system
             
             logger.info(f"✅ RAG System Manager initialization complete. Systems ready: {list(self._rag_systems.keys())}")
             
@@ -179,39 +140,6 @@ class RAGSystemManager:
     def get_available_systems(self) -> list:
         """Get list of available RAG system types."""
         return list(self._rag_systems.keys())
-    
-    def reload_system(self, session_type: str):
-        """
-        Reload a specific RAG system (useful for development).
-        
-        Args:
-            session_type: The session type to reload
-        """
-        if session_type in SESSION_DOCS_MAPPING:
-            docs_path = SESSION_DOCS_MAPPING[session_type]
-            if os.path.exists(docs_path):
-                logger.info(f"Reloading RAG system for {session_type}")
-                
-                # Create new LLM provider
-                llm_provider = create_llm_provider(
-                    DEFAULT_LLM_PROVIDER,
-                    llm_model=DEFAULT_LLM_MODEL
-                )
-                
-                # Create new RAG system
-                rag_system = RAGSystem(
-                    llm_provider=llm_provider,
-                    vector_store_type=DEFAULT_VECTOR_STORE_TYPE
-                )
-                
-                # Load documents and create vector store
-                documents = rag_system.load_directory(docs_path)
-                if documents:
-                    rag_system.create_vector_store(documents)
-                    self._rag_systems[session_type] = rag_system
-                    logger.info(f"✅ RAG system reloaded for {session_type} with {len(documents)} documents")
-                else:
-                    logger.warning(f"⚠️ No documents found when reloading {session_type}")
 
 # Global instance
 rag_manager = RAGSystemManager()

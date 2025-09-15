@@ -13,7 +13,7 @@ from .models import Profile, Membership, SubscriptionEvent
 from django.http import HttpResponse
 from django.contrib import messages
 import logging
-from .forms import CustomUserCreationForm, ProfileImageForm
+from .forms import CustomUserCreationForm, ProfileImageForm, ProfileUpdateForm
 from django.conf import settings
 import stripe
 from django.views.decorators.csrf import csrf_exempt
@@ -466,6 +466,27 @@ def clear_profile_image(request):
         else:
             messages.info(request, 'No profile image to remove.')
     return redirect('profile')
+
+@login_required
+def update_profile(request):
+    """Update user profile information including location and preferences"""
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully.')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ProfileUpdateForm(instance=profile)
+    
+    return render(request, 'accounts/update_profile.html', {
+        'form': form,
+        'profile': profile
+    })
 
 @login_required
 def username_edit_htmx(request):

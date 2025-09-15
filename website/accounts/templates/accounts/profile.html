@@ -78,10 +78,65 @@
                         {% include 'accounts/partials/bio_display.html' with profile=profile %}
                     </div>
                     
+                    <!-- Location & Preferences Section -->
+                    <div class="mb-4">
+                        <h5><i class="bi bi-geo-alt"></i> Location & Preferences</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Country</label>
+                                    <p class="mb-0">
+                                        {% if profile.location_country %}
+                                            <i class="bi bi-flag"></i> {{ profile.location_country }}
+                                        {% else %}
+                                            <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Timezone</label>
+                                    <p class="mb-0">
+                                        {% if profile.timezone %}
+                                            <i class="bi bi-clock"></i> {{ profile.timezone }}
+                                        {% else %}
+                                            <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Language</label>
+                                    <p class="mb-0">
+                                        {% if profile.language_preference %}
+                                            <i class="bi bi-translate"></i> 
+                                            {% if profile.language_preference == 'en' %}English
+                                            {% elif profile.language_preference == 'da' %}Danish
+                                            {% elif profile.language_preference == 'sv' %}Swedish
+                                            {% elif profile.language_preference == 'no' %}Norwegian
+                                            {% elif profile.language_preference == 'fi' %}Finnish
+                                            {% elif profile.language_preference == 'de' %}German
+                                            {% elif profile.language_preference == 'nl' %}Dutch
+                                            {% elif profile.language_preference == 'fr' %}French
+                                            {% elif profile.language_preference == 'es' %}Spanish
+                                            {% elif profile.language_preference == 'it' %}Italian
+                                            {% else %}{{ profile.language_preference|upper }}
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary">
+                        <a href="{% url 'update_profile' %}" class="btn btn-primary">
                             <i class="bi bi-pencil"></i> Edit Profile
-                        </button>
+                        </a>
                         <button class="btn btn-outline-secondary">
                             <i class="bi bi-gear"></i> Settings
                         </button>

@@ -14,6 +14,7 @@ urlpatterns = [
     path('delete-user/', views.delete_user, name='delete_user'),
     path('upload-profile-image/', views.upload_profile_image, name='upload_profile_image'),
     path('clear-profile-image/', views.clear_profile_image, name='clear_profile_image'),
+    path('update-profile/', views.update_profile, name='update_profile'),
     path('username-edit-htmx/', views.username_edit_htmx, name='username_edit_htmx'),
     path('username-update-htmx/', views.username_update_htmx, name='username_update_htmx'),
     path('bio-edit-htmx/', views.bio_edit_htmx, name='bio_edit_htmx'),

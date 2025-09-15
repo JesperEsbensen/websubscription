@@ -17,6 +17,11 @@ class Profile(models.Model):
     two_factor_enabled = models.BooleanField(default=False)
     two_factor_secret = models.CharField(max_length=32, blank=True, null=True)
     recovery_codes = models.JSONField(default=list, blank=True, null=True)
+    
+    # Location and preferences
+    location_country = models.CharField(max_length=100, blank=True, null=True, help_text="User's country")
+    timezone = models.CharField(max_length=50, blank=True, null=True, help_text="User's timezone (e.g., 'Europe/Copenhagen')")
+    language_preference = models.CharField(max_length=10, blank=True, null=True, help_text="User's preferred language code (e.g., 'en', 'da')")
 
     def __str__(self):
         return f"{self.user.username} Profile"
