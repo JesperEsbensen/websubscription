@@ -11,4 +11,10 @@ urlpatterns = [
     path('api/sessions/<int:session_id>/clear/', views.clear_session, name='clear_session'),
     path('api/sessions/<int:session_id>/delete/', views.delete_session, name='delete_session'),
     path('api/messages/send/', views.send_message, name='send_message'),
+    
+    # Form-related URLs
+    path('forms/<int:form_id>/', views.show_form, name='show_form'),
+    path('api/forms/<int:form_id>/submit/', views.submit_form, name='submit_form'),
+    path('api/forms/', views.get_available_forms, name='get_available_forms'),
+    path('api/responses/', views.get_user_responses, name='get_user_responses'),
 ] 

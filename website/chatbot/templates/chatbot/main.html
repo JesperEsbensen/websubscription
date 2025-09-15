@@ -210,6 +210,96 @@
     to { transform: rotate(360deg); }
 }
 
+/* Form styling within chat messages */
+.form-message {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 8px 0;
+}
+
+/* Submitted form data styling */
+.submitted-form-data {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 8px 0;
+}
+
+.submitted-form-data h4 {
+    color: #155724;
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.data-description {
+    margin-bottom: 12px;
+}
+
+.data-description ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+.data-description li {
+    margin-bottom: 4px;
+}
+
+.submitted-form-data small {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.submitted-form-data code {
+    background-color: #e9ecef;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+}
+
+.form-message h4 {
+    color: var(--dark-green);
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+}
+
+.chatbot-form .form-group {
+    margin-bottom: 16px;
+}
+
+.chatbot-form .form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+.chatbot-form .form-control:focus {
+    border-color: var(--medium-green);
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.chatbot-form .btn {
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+.chatbot-form .form-check {
+    margin-bottom: 8px;
+}
+
+.chatbot-form .form-check-input {
+    margin-top: 0.25rem;
+}
+
+.chatbot-form .form-check-label {
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .col-md-3 {
@@ -218,6 +308,14 @@
     
     .message {
         max-width: 95%;
+    }
+    
+    .form-message {
+        padding: 12px;
+    }
+    
+    .submitted-form-data {
+        padding: 12px;
     }
 }
 </style>
@@ -468,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <strong>ESG Assistant</strong>
                                 <small class="text-muted ms-2">${message.created_at}</small>
                             </div>
-                            <div class="message-text">${message.content}</div>
+                            <div class="message-text">${renderMessageContent(message.content)}</div>
                         </div>
                     </div>
                 </div>
@@ -476,6 +574,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         chatMessages.appendChild(messageDiv);
+        
+        // Add event listeners for forms in the message
+        if (!message.is_user) {
+            const forms = messageDiv.querySelectorAll('.chatbot-form');
+            forms.forEach(form => {
+                const formId = form.id.replace('chatbot-form-', '');
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    handleFormSubmission(this, formId);
+                });
+            });
+        }
         
         if (animate) {
             setTimeout(() => {
@@ -601,6 +711,181 @@ document.addEventListener('DOMContentLoaded', function() {
     function getCSRFToken() {
         return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
+
+    // Render message content (handles forms and regular text)
+    function renderMessageContent(content) {
+        // Check if content contains form HTML
+        if (content.includes('<form') && content.includes('chatbot-form')) {
+            return content; // Return HTML as-is for forms
+        }
+        return escapeHtml(content); // Escape HTML for regular text
+    }
+
+    // Handle form submissions within chat
+    function handleFormSubmission(formElement, formId) {
+        const formData = new FormData(formElement);
+        
+        // Check if this is a file upload form
+        const fileInput = formElement.querySelector('input[type="file"]');
+        const isFileUpload = fileInput !== null;
+        
+        let requestOptions;
+        
+        if (isFileUpload) {
+            // For file uploads, send FormData directly
+            requestOptions = {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: formData
+            };
+        } else {
+            // For regular forms, collect data and send as JSON
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                if (data[key]) {
+                    // Handle multiple values (checkboxes)
+                    if (Array.isArray(data[key])) {
+                        data[key].push(value);
+                    } else {
+                        data[key] = [data[key], value];
+                    }
+                } else {
+                    data[key] = value;
+                }
+            }
+            
+            requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    form_data: data
+                })
+            };
+        }
+        
+        // Submit form data
+        fetch(`/chatbot/api/forms/${formId}/submit/`, requestOptions)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Replace the form with a description of the stored data
+                replaceFormWithDataDescription(formElement, data);
+            } else {
+                // Add error message to chat
+                const errorMessage = {
+                    type: 'bot',
+                    content: `❌ Error submitting form: ${data.error}`,
+                    created_at: getCurrentTime(),
+                    is_user: false
+                };
+                addMessageToChat(errorMessage, true);
+            }
+        })
+        .catch(error => {
+            console.error('Error submitting form:', error);
+            const errorMessage = {
+                type: 'bot',
+                content: '❌ Network error while submitting form. Please try again.',
+                created_at: getCurrentTime(),
+                is_user: false
+            };
+            addMessageToChat(errorMessage, true);
+        });
+    }
+
+    // Replace form with data description after successful submission
+    function replaceFormWithDataDescription(formElement, responseData) {
+        const formContainer = formElement.closest('.form-message');
+        if (!formContainer) return;
+
+        // Use the submitted data from the server response
+        const submittedData = responseData.submitted_data || {};
+
+        // Generate description of the stored data
+        const dataDescription = generateDataDescription(responseData.form_title, submittedData);
+        
+        // Replace the form with the description
+        formContainer.innerHTML = `
+            <div class="submitted-form-data">
+                <h4>✅ ${responseData.form_title} - Submitted</h4>
+                <div class="data-description">
+                    ${dataDescription}
+                </div>
+                <small class="text-muted">
+                    <i class="bi bi-check-circle"></i> 
+                    Data saved successfully to the database
+                    ${responseData.submitted_data && responseData.submitted_data.file_path ? 
+                        `<br><i class="bi bi-folder"></i> File saved to: <code>${responseData.submitted_data.file_path}</code>` : 
+                        ''
+                    }
+                </small>
+            </div>
+        `;
+    }
+
+    // Generate a human-readable description of the submitted data
+    function generateDataDescription(formTitle, data) {
+        let description = `<p><strong>Form submitted:</strong> ${formTitle}</p>`;
+        description += '<p><strong>Your responses:</strong></p><ul>';
+        
+        for (const [key, value] of Object.entries(data)) {
+            const fieldLabel = getFieldLabel(key);
+            let displayValue = value;
+            
+            if (Array.isArray(value)) {
+                displayValue = value.join(', ');
+            }
+            
+            // Special handling for file uploads
+            if (key === 'file_name' && data.file_size && data.file_type) {
+                const fileSize = formatFileSize(data.file_size);
+                description += `<li><strong>Uploaded File:</strong> ${escapeHtml(displayValue)} (${fileSize}, ${data.file_type})</li>`;
+                continue;
+            } else if (key === 'file_size' || key === 'file_type' || key === 'file_path' || key === 'uploaded_at') {
+                continue; // Skip these as they're handled with file_name
+            }
+            
+            if (displayValue && displayValue.trim()) {
+                description += `<li><strong>${fieldLabel}:</strong> ${escapeHtml(displayValue)}</li>`;
+            }
+        }
+        
+        description += '</ul>';
+        return description;
+    }
+
+    // Format file size in human readable format
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Get human-readable field labels
+    function getFieldLabel(fieldName) {
+        const fieldLabels = {
+            'esg_assessment': 'ESG Assessment',
+            'company_name': 'Company Name',
+            'industry': 'Industry',
+            'esg_priorities': 'ESG Priorities',
+            'contact_email': 'Contact Email',
+            'company_size': 'Company Size',
+            'reporting_timeline': 'Reporting Timeline',
+            'document_upload': 'Document Upload',
+            'file_name': 'File Name',
+            'file_size': 'File Size',
+            'file_type': 'File Type'
+        };
+        return fieldLabels[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
 
     // Auto-resize textarea
     messageInput.addEventListener('input', function() {

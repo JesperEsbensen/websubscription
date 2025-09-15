@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ form_question.title }} - Form{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">{{ form_question.title }}</h3>
+                </div>
+                <div class="card-body">
+                    {% if form_question.description %}
+                        <p class="text-muted mb-4">{{ form_question.description }}</p>
+                    {% endif %}
+                    
+                    <form id="chatbot-form" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="{{ form_question.field_name }}" class="form-label">
+                                {{ form_question.field_label }}
+                                {% if form_question.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            
+                            {% if form_question.field_type == 'text' %}
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="{{ form_question.field_name }}" 
+                                       name="{{ form_question.field_name }}"
+                                       placeholder="{{ form_question.placeholder }}"
+                                       {% if form_question.required %}required{% endif %}>
+                            {% elif form_question.field_type == 'textarea' %}
+                                <textarea class="form-control" 
+                                          id="{{ form_question.field_name }}" 
+                                          name="{{ form_question.field_name }}"
+                                          rows="4"
+                                          placeholder="{{ form_question.placeholder }}"
+                                          {% if form_question.required %}required{% endif %}></textarea>
+                            {% elif form_question.field_type == 'email' %}
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="{{ form_question.field_name }}" 
+                                       name="{{ form_question.field_name }}"
+                                       placeholder="{{ form_question.placeholder }}"
+                                       {% if form_question.required %}required{% endif %}>
+                            {% elif form_question.field_type == 'number' %}
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="{{ form_question.field_name }}" 
+                                       name="{{ form_question.field_name }}"
+                                       placeholder="{{ form_question.placeholder }}"
+                                       {% if form_question.required %}required{% endif %}>
+                            {% elif form_question.field_type == 'date' %}
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="{{ form_question.field_name }}" 
+                                       name="{{ form_question.field_name }}"
+                                       {% if form_question.required %}required{% endif %}>
+                            {% elif form_question.field_type == 'datetime' %}
+                                <input type="datetime-local" 
+                                       class="form-control" 
+                                       id="{{ form_question.field_name }}" 
+                                       name="{{ form_question.field_name }}"
+                                       {% if form_question.required %}required{% endif %}>
+                            {% elif form_question.field_type == 'file' %}
+                                <input type="file" 
+                                       class="form-control" 
+                                       id="{{ form_question.field_name }}" 
+                                       name="{{ form_question.field_name }}"
+                                       {% if form_question.required %}required{% endif %}
+                                       {% if form_question.validation_rules.allowed_extensions %}accept="{% for ext in form_question.validation_rules.allowed_extensions %}{{ ext }}{% if not forloop.last %},{% endif %}{% endfor %}"{% endif %}>
+                                {% if form_question.validation_rules.max_size %}
+                                    <small class="form-text text-muted">Maximum file size: {{ form_question.validation_rules.max_size }}</small>
+                                {% endif %}
+                                {% if form_question.validation_rules.allowed_extensions %}
+                                    <small class="form-text text-muted">Allowed file types: {{ form_question.validation_rules.allowed_extensions|join:", " }}</small>
+                                {% endif %}
+                            {% elif form_question.field_type == 'select' %}
+                                <select class="form-control" 
+                                        id="{{ form_question.field_name }}" 
+                                        name="{{ form_question.field_name }}"
+                                        {% if form_question.required %}required{% endif %}>
+                                    <option value="">Select an option...</option>
+                                    {% for option in form_question.options %}
+                                        <option value="{{ option }}">{{ option }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% elif form_question.field_type == 'radio' %}
+                                <div class="form-check-group">
+                                    {% for option in form_question.options %}
+                                        <div class="form-check">
+                                            <input type="radio" 
+                                                   class="form-check-input" 
+                                                   id="{{ form_question.field_name }}_{{ forloop.counter0 }}" 
+                                                   name="{{ form_question.field_name }}" 
+                                                   value="{{ option }}"
+                                                   {% if form_question.required %}required{% endif %}>
+                                            <label class="form-check-label" for="{{ form_question.field_name }}_{{ forloop.counter0 }}">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% elif form_question.field_type == 'checkbox' %}
+                                <div class="form-check-group">
+                                    {% for option in form_question.options %}
+                                        <div class="form-check">
+                                            <input type="checkbox" 
+                                                   class="form-check-input" 
+                                                   id="{{ form_question.field_name }}_{{ forloop.counter0 }}" 
+                                                   name="{{ form_question.field_name }}" 
+                                                   value="{{ option }}">
+                                            <label class="form-check-label" for="{{ form_question.field_name }}_{{ forloop.counter0 }}">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="invalid-feedback">
+                                Please provide a valid {{ form_question.field_label|lower }}.
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'chatbot:chatbot_main' %}" class="btn btn-secondary">Back to Chat</a>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                Submit Form
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="successModalLabel">Form Submitted Successfully</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Your form has been submitted successfully. The data has been saved and stored in your customer folder.</p>
+                <div id="file-location-info" style="display: none;">
+                    <p><strong>File Location:</strong> <code id="file-path"></code></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'chatbot:chatbot_main' %}" class="btn btn-primary">Back to Chat</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="errorMessage">An error occurred while submitting the form.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('chatbot-form');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const spinner = submitBtn.querySelector('.spinner-border');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        spinner.classList.remove('d-none');
+        
+        // Collect form data
+        const formData = new FormData(form);
+        const fieldType = '{{ form_question.field_type }}';
+        
+        let requestOptions;
+        
+        if (fieldType === 'file') {
+            // For file uploads, send FormData directly
+            requestOptions = {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                },
+                body: formData
+            };
+        } else {
+            // For regular forms, collect data and send as JSON
+            const data = {};
+            const fieldName = '{{ form_question.field_name }}';
+            
+            if (fieldType === 'checkbox') {
+                // For checkboxes, collect all checked values
+                const checkboxes = form.querySelectorAll(`input[name="${fieldName}"]:checked`);
+                data[fieldName] = Array.from(checkboxes).map(cb => cb.value);
+            } else {
+                data[fieldName] = formData.get(fieldName);
+            }
+            
+            requestOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                },
+                body: JSON.stringify({
+                    form_data: data
+                })
+            };
+        }
+        
+        // Submit form data
+        fetch('{% url "chatbot:submit_form" form_question.id %}', requestOptions)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show file location if it's a file upload
+                if (data.submitted_data && data.submitted_data.file_path) {
+                    document.getElementById('file-path').textContent = data.submitted_data.file_path;
+                    document.getElementById('file-location-info').style.display = 'block';
+                } else {
+                    document.getElementById('file-location-info').style.display = 'none';
+                }
+                
+                // Show success modal
+                const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                successModal.show();
+            } else {
+                // Show error modal
+                document.getElementById('errorMessage').textContent = data.error || 'An error occurred while submitting the form.';
+                const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                errorModal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('errorMessage').textContent = 'An error occurred while submitting the form.';
+            const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            errorModal.show();
+        })
+        .finally(() => {
+            // Hide loading state
+            submitBtn.disabled = false;
+            spinner.classList.add('d-none');
+        });
+    });
+    
+    // Bootstrap form validation
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}

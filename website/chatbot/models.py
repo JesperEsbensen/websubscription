@@ -58,3 +58,64 @@ class ChatMessage(models.Model):
     @property
     def is_bot_message(self):
         return self.message_type == 'bot'
+
+
+class FormQuestion(models.Model):
+    """Model for storing form questions that can be presented to users"""
+    FIELD_TYPES = [
+        ('text', 'Text Input'),
+        ('textarea', 'Text Area'),
+        ('email', 'Email'),
+        ('number', 'Number'),
+        ('select', 'Select Dropdown'),
+        ('radio', 'Radio Buttons'),
+        ('checkbox', 'Checkbox'),
+        ('date', 'Date'),
+        ('datetime', 'Date and Time'),
+        ('file', 'File Upload'),
+    ]
+    
+    title = models.CharField(max_length=200, help_text="Question title or form name")
+    description = models.TextField(blank=True, help_text="Optional description or instructions")
+    field_type = models.CharField(max_length=20, choices=FIELD_TYPES, default='text')
+    field_name = models.CharField(max_length=100, help_text="Internal field name for JSON storage")
+    field_label = models.CharField(max_length=200, help_text="Display label for the field")
+    placeholder = models.CharField(max_length=200, blank=True, help_text="Placeholder text")
+    required = models.BooleanField(default=True)
+    options = models.JSONField(default=list, blank=True, help_text="Options for select/radio/checkbox fields")
+    validation_rules = models.JSONField(default=dict, blank=True, help_text="Custom validation rules")
+    order = models.PositiveIntegerField(default=0, help_text="Display order")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order', 'created_at']
+    
+    def __str__(self):
+        return f"{self.title} ({self.field_type})"
+
+
+class FormResponse(models.Model):
+    """Model for storing form responses and managing JSON file storage"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='form_responses')
+    form_title = models.CharField(max_length=200)
+    response_data = models.JSONField(default=dict)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.form_title} ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
+    
+    
+    @classmethod
+    def get_user_responses(cls, user, form_title=None):
+        """Get all responses for a user, optionally filtered by form title"""
+        queryset = cls.objects.filter(user=user)
+        if form_title:
+            queryset = queryset.filter(form_title=form_title)
+        return queryset
+    
