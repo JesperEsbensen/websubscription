@@ -3,7 +3,7 @@
 from .accounts import UserFactory, ProfileFactory, MembershipFactory
 from .chatbot import ChatSessionFactory, ChatMessageFactory
 from .guestbook import CommentFactory
-from .rag import RAGDialogueFactory, RAGExchangeFactory
+from .rag import RAGDialogueFactory, RAGExchangeFactory, RAGDocumentFactory, RAGSystemLogFactory
 
 __all__ = [
     'UserFactory',
@@ -13,5 +13,7 @@ __all__ = [
     'ChatMessageFactory',
     'CommentFactory',
     'RAGDialogueFactory',
-    'RAGExchangeFactory'
+    'RAGExchangeFactory',
+    'RAGDocumentFactory',
+    'RAGSystemLogFactory'
 ]

@@ -2,8 +2,25 @@
 pytest configuration and shared fixtures.
 """
 
-import pytest
+import os
+import sys
 import tempfile
+from pathlib import Path
+
+# Configure Django before any imports
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tests.test_settings')
+
+# Add paths to Python path
+BASE_DIR = Path(__file__).resolve().parent.parent
+WEBSITE_DIR = BASE_DIR / 'website'
+sys.path.insert(0, str(BASE_DIR))
+sys.path.insert(0, str(WEBSITE_DIR))
+
+# Setup Django
+import django
+django.setup()
+
+import pytest
 from django.test import Client
 from django.contrib.auth import get_user_model
 from tests.factories.accounts import UserFactory, ProfileFactory

@@ -52,12 +52,14 @@ class TestRAGDialogueModel:
         exchange1 = RAGExchangeFactory(
             dialogue=dialogue,
             tokens_used=100,
-            cost=Decimal('0.01')
+            cost=Decimal('0.01'),
+            exchange_number=1
         )
         exchange2 = RAGExchangeFactory(
             dialogue=dialogue,
             tokens_used=200,
-            cost=Decimal('0.02')
+            cost=Decimal('0.02'),
+            exchange_number=2
         )
         
         # Test that exchanges are related correctly
@@ -75,17 +77,18 @@ class TestRAGExchangeModel:
         assert exchange.pk is not None
         assert exchange.dialogue is not None
         assert exchange.user_query
-        assert exchange.bot_response
+        assert exchange.system_response
         assert exchange.tokens_used > 0
         assert exchange.cost >= Decimal('0.00')
-        assert exchange.response_time_ms > 0
-        assert 0.0 <= exchange.confidence_score <= 1.0
+        assert exchange.processing_time > 0
+        assert isinstance(exchange.retrieved_documents, list)
+        assert isinstance(exchange.similarity_scores, list)
     
     def test_exchange_dialogue_relationship(self):
         """Test exchange-dialogue relationship."""
         dialogue = RAGDialogueFactory()
-        exchange1 = RAGExchangeFactory(dialogue=dialogue)
-        exchange2 = RAGExchangeFactory(dialogue=dialogue)
+        exchange1 = RAGExchangeFactory(dialogue=dialogue, exchange_number=1)
+        exchange2 = RAGExchangeFactory(dialogue=dialogue, exchange_number=2)
         
         # Test forward relationship
         assert exchange1.dialogue == dialogue
@@ -104,24 +107,27 @@ class TestRAGExchangeModel:
         expected_cost = Decimal(str(exchange.tokens_used * 0.001))
         assert exchange.cost == expected_cost
     
-    def test_exchange_sources_storage(self):
-        """Test that sources are stored as JSON list."""
-        sources = ['doc1.pdf', 'doc2.pdf', 'doc3.pdf']
-        exchange = RAGExchangeFactory(sources_used=sources)
-        assert exchange.sources_used == sources
-        assert isinstance(exchange.sources_used, list)
+    def test_exchange_retrieved_documents_storage(self):
+        """Test that retrieved documents are stored as JSON list."""
+        documents = ['doc1.pdf', 'doc2.pdf', 'doc3.pdf']
+        exchange = RAGExchangeFactory(retrieved_documents=documents)
+        assert exchange.retrieved_documents == documents
+        assert isinstance(exchange.retrieved_documents, list)
     
     def test_exchange_ordering(self):
-        """Test exchange ordering by creation time."""
+        """Test exchange ordering by exchange number."""
         dialogue = RAGDialogueFactory()
         
         # Create exchanges in specific order
-        exchange1 = RAGExchangeFactory(dialogue=dialogue, user_query='First')
-        exchange2 = RAGExchangeFactory(dialogue=dialogue, user_query='Second')
-        exchange3 = RAGExchangeFactory(dialogue=dialogue, user_query='Third')
+        exchange3 = RAGExchangeFactory(dialogue=dialogue, user_query='Third', exchange_number=3)
+        exchange1 = RAGExchangeFactory(dialogue=dialogue, user_query='First', exchange_number=1)
+        exchange2 = RAGExchangeFactory(dialogue=dialogue, user_query='Second', exchange_number=2)
         
-        # Get exchanges in default ordering
+        # Get exchanges in default ordering (should be by exchange_number)
         exchanges = list(dialogue.exchanges.all())
         
-        # Should be ordered by creation time (check the model's Meta ordering)
+        # Should be ordered by exchange_number
         assert len(exchanges) == 3
+        assert exchanges[0].exchange_number == 1
+        assert exchanges[1].exchange_number == 2
+        assert exchanges[2].exchange_number == 3

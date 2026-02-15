@@ -15,8 +15,8 @@ echo -e "${GREEN}🧪 Web Subscription Platform Test Runner${NC}"
 echo "========================================"
 
 # Check if we're in the right directory
-if [ ! -f "manage.py" ]; then
-    echo -e "${RED}❌ Error: Please run this script from the project root directory (where manage.py is located)${NC}"
+if [ ! -f "manage.py" ] && [ ! -f "website/manage.py" ]; then
+    echo -e "${RED}❌ Error: Please run this script from the project root directory${NC}"
     exit 1
 fi
 

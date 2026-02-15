@@ -3,9 +3,18 @@ Django settings for testing environment.
 Inherits from main settings but optimized for testing.
 """
 
-from website.settings import *
-import tempfile
 import os
+import sys
+import tempfile
+from pathlib import Path
+
+# Add website directory to Python path to import Django settings
+BASE_DIR = Path(__file__).resolve().parent.parent
+WEBSITE_DIR = BASE_DIR / 'website'
+sys.path.insert(0, str(WEBSITE_DIR))
+
+# Import Django settings
+from website.settings import *
 
 # Test database - use in-memory SQLite for speed
 DATABASES = {

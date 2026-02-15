@@ -12,6 +12,7 @@ class UserFactory(factory.django.DjangoModelFactory):
     """Factory for User model."""
     class Meta:
         model = User
+        skip_postgeneration_save = True  # Prevent factory deprecation warning
     
     username = factory.Sequence(lambda n: f"user{n}")
     email = factory.LazyAttribute(lambda obj: f"{obj.username}@example.com")
@@ -29,9 +30,10 @@ class UserFactory(factory.django.DjangoModelFactory):
             obj.save()
 
 class ProfileFactory(factory.django.DjangoModelFactory):
-    """Factory for Profile model."""
+    """Factory for Profile model. Uses existing profile created by signal."""
     class Meta:
         model = Profile
+        django_get_or_create = ('user',)  # Get existing profile instead of creating new
     
     user = factory.SubFactory(UserFactory)
     bio = factory.Faker('text', max_nb_chars=500)
@@ -43,6 +45,20 @@ class ProfileFactory(factory.django.DjangoModelFactory):
     timezone = 'UTC'
     language_preference = 'en'
     two_factor_enabled = False
+    
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        """Override to get existing profile created by Django signal."""
+        user = kwargs.pop('user', None)
+        if user:
+            # Get the existing profile created by post_save signal
+            profile, created = model_class.objects.get_or_create(user=user)
+            # Update the profile with factory data
+            for key, value in kwargs.items():
+                setattr(profile, key, value)
+            profile.save()
+            return profile
+        return super()._create(model_class, *args, **kwargs)
 
 class MembershipFactory(factory.django.DjangoModelFactory):
     """Factory for Membership model."""
