@@ -1,0 +1,49 @@
+# Files and directories to exclude from production deployment
+# Use this file with your deployment tools (rsync, Docker, etc.)
+
+# Test directories and files
+tests/
+*_test.py
+test_*.py
+run_tests.sh
+
+# Development dependencies
+requirements-test.txt
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Development tools
+.pytest_cache/
+.tox/
+.nox/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Local development settings
+.env.local
+.env.development
+local_settings.py
+
+# Documentation that's not needed in production
+README.md
+CONTRIBUTING.md
+CHANGELOG.md

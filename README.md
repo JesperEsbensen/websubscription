@@ -21,6 +21,36 @@ This project is a basic website based on django 5.2 that offers:
 - Test covering most of above have been implemented.
 - Two factor authentication (2FA) with authenticator app and 10 resque keys.
 
+## 🧪 Testing
+
+This project includes a comprehensive test suite organized in a separate `tests/` directory:
+
+```bash
+# Install test dependencies
+pip install -r tests/requirements-test.txt
+
+# Run all tests
+./run_tests.sh
+
+# Run with coverage
+./run_tests.sh --coverage
+
+# Run only unit tests
+./run_tests.sh --unit
+
+# Fast test run (skip slow tests)
+./run_tests.sh --fast
+```
+
+For detailed testing documentation, see [tests/README.md](tests/README.md).
+
+### Test Organization
+- **Unit Tests**: Individual component testing in `tests/unit/`
+- **Integration Tests**: End-to-end workflow testing in `tests/integration/`
+- **Factories**: Test data creation in `tests/factories/`
+- **Fixtures**: Static test data in `tests/fixtures/`
+- **Utilities**: Test helpers in `tests/utils/`
+
 ## Installation
 
 python3.12 -m venv .venv

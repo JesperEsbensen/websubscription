@@ -1,31 +1,316 @@
-asgiref==3.8.1
-certifi==2025.6.15
-charset-normalizer==3.4.2
+# Core Django Framework
 Django==5.2.3
+asgiref==3.8.1
+sqlparse==0.5.3
+
+# Django Extensions
 django-formtools==2.5.1
 django-otp==1.6.0
 django-phonenumber-field==8.1.0
 django-two-factor-auth==1.17.0
-dotenv==0.9.9
-idna==3.10
-phonenumbers==9.0.8
-pillow==11.2.1
+
+# Authentication & Security
 pyotp==2.9.0
-pypng==0.20220715.0
-python-dotenv==1.1.1
 qrcode==7.4.2
-requests==2.32.4
-sqlparse==0.5.3
+pypng==0.20220715.0
+phonenumbers==9.0.8
+bcrypt==4.3.0
+cryptography==45.0.6
+
+# Payment Processing
 stripe==12.2.0
-typing_extensions==4.14.0
+
+# Image Processing
+pillow==11.2.1
+opencv-python==4.12.0.88
+opencv-python-headless==4.12.0.88
+
+# HTTP & Networking
+requests==2.32.5
 urllib3==2.5.0
+certifi==2025.6.15
+charset-normalizer==3.4.2
+idna==3.10
+httpx==0.28.1
+httpcore==1.0.9
+aiohttp==3.12.15
+aiofiles==24.1.0
+
+# Environment & Configuration
+python-dotenv==1.1.1
+dotenv==0.9.9
 
 # RAG System Dependencies
-langchain>=0.1.0
-langchain-openai>=0.0.5
-langchain-community>=0.0.10
-chromadb>=0.4.0
-openai>=1.0.0
-numpy>=1.20.0
-scikit-learn>=1.0.0
-faiss-cpu>=1.7.0
+langchain==0.3.27
+langchain-community==0.3.29
+langchain-core==0.3.75
+langchain-openai==0.3.32
+langchain-text-splitters==0.3.10
+openai==1.102.0
+chromadb==1.0.20
+
+# Document Processing
+docling==2.52.0
+docling-core==2.48.1
+docling-ibm-models==3.9.1
+docling-parse==4.4.0
+pypdfium2==4.30.0
+pypdf==6.0.0
+pdf2image==1.17.0
+pdfminer.six==20250506
+python-docx==1.2.0
+python-pptx==1.0.2
+openpyxl==3.1.5
+python-oxmsg==0.0.2
+unstructured==0.18.14
+unstructured-client==0.42.3
+unstructured-inference==1.0.5
+unstructured.pytesseract==0.3.15
+
+# Machine Learning & NLP
+numpy==2.2.6
+scikit-learn==1.7.1
+scipy==1.16.1
+pandas==2.3.2
+sentence-transformers==5.1.0
+transformers==4.55.4
+torch==2.8.0
+torchvision==0.23.0
+tiktoken==0.11.0
+rank-bm25==0.2.2
+nltk==3.9.1
+langdetect==1.0.9
+
+# Computer Vision & OCR
+easyocr==1.7.2
+timm==1.0.19
+effdet==0.4.1
+pycocotools==2.0.10
+opencv-python==4.12.0.88
+opencv-python-headless==4.12.0.88
+
+# Data Processing & Utilities
+pydantic==2.11.7
+pydantic-settings==2.10.1
+pydantic_core==2.33.2
+marshmallow==3.26.1
+jsonschema==4.25.1
+jsonschema-specifications==2025.4.1
+referencing==0.36.2
+rpds-py==0.27.1
+jsonlines==3.1.0
+jsonpatch==1.33
+jsonpointer==3.0.0
+jsonref==1.1.0
+tabulate==0.9.0
+rich==14.1.0
+tqdm==4.67.1
+coloredlogs==15.0.1
+humanfriendly==10.0
+
+# Web & API
+uvicorn==0.35.0
+fastapi==0.115.6
+starlette==0.41.5
+websockets==15.0.1
+websocket-client==1.8.0
+
+# Database & Storage
+SQLAlchemy==2.0.43
+fsspec==2025.7.0
+
+# File Processing
+python-magic==0.4.27
+filetype==1.2.0
+shapely==2.1.1
+rtree==1.4.1
+lxml==5.4.0
+beautifulsoup4==4.13.5
+html5lib==1.1
+soupsieve==2.8
+
+# Google Cloud & Vision
+google-cloud-vision==3.10.2
+google-api-core==2.25.1
+google-auth==2.40.3
+googleapis-common-protos==1.70.0
+proto-plus==1.26.1
+grpcio==1.74.0
+grpcio-status==1.74.0
+
+# Monitoring & Logging
+opentelemetry-api==1.36.0
+opentelemetry-exporter-otlp-proto-common==1.36.0
+opentelemetry-exporter-otlp-proto-grpc==1.36.0
+opentelemetry-proto==1.36.0
+opentelemetry-sdk==1.36.0
+opentelemetry-semantic-conventions==0.57b0
+posthog==5.4.0
+langsmith==0.4.20
+
+# Development & Testing
+Faker==37.6.0
+polyfactory==2.22.2
+pluggy==1.6.0
+build==1.3.0
+setuptools==80.9.0
+wheel==0.45.1
+
+# System & Process Management
+psutil==7.0.0
+watchfiles==1.1.0
+shellingham==1.5.4
+distro==1.9.0
+
+# Utilities
+typing_extensions==4.14.0
+typing-inspect==0.9.0
+typing-inspection==0.4.1
+mypy_extensions==1.1.0
+attrs==25.3.0
+click==8.2.1
+typer==0.16.1
+tenacity==9.1.2
+backoff==2.2.1
+cachetools==5.5.2
+emoji==2.14.1
+regex==2025.7.34
+six==1.17.0
+wrapt==1.17.3
+zipp==3.23.0
+importlib_metadata==8.7.0
+importlib_resources==6.5.2
+
+# Date & Time
+python-dateutil==2.9.0.post0
+pytz==2025.2
+tzdata==2025.2
+durationpy==0.10
+
+# Math & Scientific Computing
+mpmath==1.3.0
+sympy==1.14.0
+matplotlib==3.10.5
+contourpy==1.3.3
+cycler==0.12.1
+fonttools==4.59.2
+kiwisolver==1.4.9
+networkx==3.5
+scikit-image==0.25.2
+tifffile==2025.9.9
+imageio==2.37.0
+
+# Compression & Encoding
+zstandard==0.24.0
+pybase64==1.4.2
+orjson==3.11.3
+yarl==1.20.1
+multidict==6.6.4
+frozenlist==1.7.0
+aiosignal==1.4.0
+aiohappyeyeballs==2.6.1
+
+# Template & Markup
+Jinja2==3.1.6
+MarkupSafe==3.0.2
+markdown-it-py==4.0.0
+mdurl==0.1.2
+marko==2.2.0
+Pygments==2.19.2
+latex2mathml==3.78.1
+pylatexenc==2.10
+python-bidi==0.6.6
+python-iso639==2025.2.18
+
+# Kubernetes & Cloud
+kubernetes==33.1.0
+
+# OAuth & Authentication
+oauthlib==3.3.1
+requests-oauthlib==2.0.0
+requests-toolbelt==1.0.0
+rsa==4.9.1
+pyasn1==0.6.1
+pyasn1_modules==0.4.2
+
+# Configuration Management
+omegaconf==2.3.0
+PyYAML==6.0.2
+dataclasses-json==0.6.7
+overrides==7.7.0
+
+# Performance & Optimization
+nvidia-cublas-cu12==12.8.4.1
+nvidia-cuda-cupti-cu12==12.8.90
+nvidia-cuda-nvrtc-cu12==12.8.93
+nvidia-cuda-runtime-cu12==12.8.90
+nvidia-cudnn-cu12==9.10.2.21
+nvidia-cufft-cu12==11.3.3.83
+nvidia-cufile-cu12==1.13.1.3
+nvidia-curand-cu12==10.3.9.90
+nvidia-cusolver-cu12==11.7.3.90
+nvidia-cusparse-cu12==12.5.8.93
+nvidia-cusparselt-cu12==0.7.1
+nvidia-nccl-cu12==2.27.3
+nvidia-nvjitlink-cu12==12.8.93
+nvidia-nvtx-cu12==12.8.90
+accelerate==1.10.1
+safetensors==0.6.2
+tokenizers==0.21.4
+huggingface-hub==0.34.4
+hf-xet==1.1.9
+
+# ONNX Runtime
+onnx==1.19.0
+onnxruntime==1.22.1
+
+# Additional ML Libraries
+joblib==1.5.2
+threadpoolctl==3.6.0
+lazy_loader==0.4
+mmh3==5.2.0
+RapidFuzz==3.14.0
+semchunk==2.2.2
+
+# File Format Support
+et_xmlfile==2.0.0
+xlsxwriter==3.2.5
+olefile==0.47
+pi_heif==1.1.0
+pikepdf==9.10.2
+pyclipper==1.3.0.post6
+
+# Async & Concurrency
+anyio==4.10.0
+sniffio==1.3.1
+greenlet==3.2.4
+uvloop==0.21.0
+httptools==0.6.4
+h11==0.16.0
+jiter==0.10.0
+httpx-sse==0.4.1
+
+# Multiprocessing
+multiprocess==0.70.18
+mpire==2.10.2
+dill==0.4.0
+
+# Deprecated & Legacy
+Deprecated==1.2.18
+
+# Build Tools
+ninja==1.13.0
+pyproject_hooks==1.2.0
+packaging==25.0
+
+# Miscellaneous
+antlr4-python3-runtime==4.9.3
+cffi==1.17.1
+pycparser==2.22
+filelock==3.19.1
+propcache==0.3.2
+protobuf==6.32.0
+flatbuffers==25.2.10
+triton==3.4.0
+ml_dtypes==0.5.3
+webencodings==0.5.1

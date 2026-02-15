@@ -1,0 +1,29 @@
+[
+  {
+    "model": "accounts.membership",
+    "pk": 1,
+    "fields": {
+      "name": "Basic",
+      "stripe_price_id": "price_basic_test",
+      "description": "Basic membership with limited features"
+    }
+  },
+  {
+    "model": "accounts.membership",
+    "pk": 2,
+    "fields": {
+      "name": "Premium",
+      "stripe_price_id": "price_premium_test",
+      "description": "Premium membership with full access"
+    }
+  },
+  {
+    "model": "accounts.membership",
+    "pk": 3,
+    "fields": {
+      "name": "Enterprise",
+      "stripe_price_id": "price_enterprise_test",
+      "description": "Enterprise membership with advanced features"
+    }
+  }
+]

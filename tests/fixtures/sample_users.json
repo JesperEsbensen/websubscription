@@ -1,0 +1,30 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "testuser1",
+      "email": "testuser1@example.com",
+      "first_name": "Test",
+      "last_name": "User",
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "date_joined": "2024-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "username": "testadmin",
+      "email": "admin@example.com",
+      "first_name": "Admin",
+      "last_name": "User",
+      "is_active": true,
+      "is_staff": true,
+      "is_superuser": true,
+      "date_joined": "2024-01-01T00:00:00Z"
+    }
+  }
+]

@@ -321,12 +321,6 @@ class RAGSystem:
                 logger.warning(f"Unsupported vector store type: {self.vector_store_type}")
                 return
             
-            # Initialize retriever
-            # self.retriever = self.vector_store.as_retriever(
-            #     search_type="similarity",
-            #     search_kwargs={"k": 5}
-            # )
-
             # Use retriever from docling_chroma_db
             db = DoclingChromaDB(
                 persist_dir=os.path.join(DOCLING_DB_PATH, 'esg'),
@@ -423,30 +417,6 @@ class RAGSystem:
             logger.error(f"Error loading existing vector store: {str(e)}")
         
         return False
-    
-    def add_documents(self, documents: List[Document]) -> None:
-        """
-        Add new documents to the existing vector store.
-        
-        Args:
-            documents: List of new documents to add
-        """
-        if not self.vector_store:
-            logger.error("Vector store not initialized. Call create_vector_store first.")
-            return
-        
-        try:
-            logger.info(f"🔄 Adding {len(documents)} new documents to vector store...")
-            split_docs = self.split_documents(documents)
-            self.vector_store.add_documents(split_docs)
-            
-            if hasattr(self.vector_store, 'persist'):
-                self.vector_store.persist()
-            
-            logger.info(f"✅ Added {len(split_docs)} document chunks to vector store")
-            
-        except Exception as e:
-            logger.error(f"Error adding documents: {str(e)}")
     
     def query(self, question: str, k: int = 5, include_intermediate: bool = True) -> Dict[str, Any]:
         """
